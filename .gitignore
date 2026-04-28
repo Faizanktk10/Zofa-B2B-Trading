@@ -1,0 +1,21 @@
+# .NET
+ZofaB2B.API/bin/
+ZofaB2B.API/obj/
+ZofaB2B.API/appsettings.Production.json
+
+# React
+zofa-frontend/node_modules/
+zofa-frontend/dist/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

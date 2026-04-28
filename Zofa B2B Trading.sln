@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZofaB2B.API", "ZofaB2B.API\ZofaB2B.API.csproj", "{AD5F8D96-2767-96D2-19AF-266DBB302D3D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AD5F8D96-2767-96D2-19AF-266DBB302D3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AD5F8D96-2767-96D2-19AF-266DBB302D3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AD5F8D96-2767-96D2-19AF-266DBB302D3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AD5F8D96-2767-96D2-19AF-266DBB302D3D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AF922C26-CE8D-4E6C-9468-9C64295A402F}
+	EndGlobalSection
+EndGlobal

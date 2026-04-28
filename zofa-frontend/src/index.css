@@ -1,0 +1,171 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f8f9fa;
+  color: #1a1a2e;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: #e94560;
+}
+
+/* Focus styles */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+  box-shadow: 0 0 0 0.2rem rgba(233, 69, 96, 0.2);
+  border-color: #e94560;
+  outline: none;
+}
+
+/* Cards */
+.card {
+  border-radius: 12px;
+}
+
+/* Navbar */
+.navbar {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+.app-navbar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0;
+  width: 100%;
+  z-index: 1100;
+}
+
+.app-main {
+  padding-top: 82px;
+}
+
+.pricing-plan-card {
+  cursor: pointer;
+  border: 1px solid transparent !important;
+  transition: all 0.2s ease;
+}
+
+.pricing-plan-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(15, 52, 96, 0.15) !important;
+}
+
+.pricing-plan-active {
+  border-color: #e94560 !important;
+  background: linear-gradient(180deg, #fff 0%, #fff6f8 100%);
+  box-shadow: 0 12px 30px rgba(233, 69, 96, 0.18) !important;
+}
+
+.supplier-market-card:hover {
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Smooth page transitions */
+main {
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #e94560; border-radius: 3px; }
+
+/* Mobile: stack tables */
+@media (max-width: 576px) {
+  .table-responsive table {
+    font-size: 0.8rem;
+  }
+  .display-4 {
+    font-size: 2rem !important;
+  }
+  .display-5 {
+    font-size: 1.8rem !important;
+  }
+}
+
+/* Badge pill */
+.badge {
+  font-weight: 500;
+}
+
+/* Dropdown */
+.dropdown-menu {
+  border-radius: 10px;
+  padding: 6px;
+}
+.dropdown-item {
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+.dropdown-item:hover {
+  background: #f0f0f0;
+}
+
+/* Form controls */
+.form-control,
+.form-select {
+  border-radius: 8px;
+  border-color: #dee2e6;
+}
+.form-control:hover,
+.form-select:hover {
+  border-color: #adb5bd;
+}
+
+/* Buttons */
+.btn {
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.btn-lg {
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
+/* Nav tabs */
+.nav-tabs .nav-link {
+  color: #6c757d;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 8px 16px;
+}
+.nav-tabs .nav-link.active {
+  color: #e94560;
+  border-bottom-color: #e94560;
+  background: transparent;
+}
+.nav-tabs {
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* Alert */
+.alert {
+  border-radius: 10px;
+  border: none;
+}
+
+/* Mobile bottom padding */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  section {
+    padding-top: 2.5rem !important;
+    padding-bottom: 2.5rem !important;
+  }
+  .app-main {
+    padding-top: 76px;
+  }
+}
