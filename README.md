@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ZOFA B2B TRADING
 
 Pakistan's #1 B2B Marketplace — connecting buyers and suppliers for industrial goods.
@@ -144,3 +145,7 @@ baseURL: 'https://api.zofa.pk/api'
 | Lead Unlock           | 200 / lead      |
 | Featured RFQ          | 500 / 7 days    |
 | Featured Supplier     | 1,500 / month   |
+=======
+# zofa-b2b
+B2B marketplace platform like Tradewheel (RFQ + Supplier system)
+>>>>>>> c9dc2ef78a52c7077df80c34e5b4758ab990971e
