@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api';
+import { useAuth } from '../context/AuthContext';
 import SEO from '../components/SEO';
 
 export default function RFQList() {
@@ -11,11 +12,20 @@ export default function RFQList() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
 
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   const search = params.get('search') || '';
   const categoryId = params.get('categoryId') || '';
   const city = params.get('city') || '';
 
   const [filters, setFilters] = useState({ search, categoryId, city });
+
+  const handlePostRFQ = () => {
+    if (!user) { navigate('/login'); return; }
+    if (user.role !== 'Buyer') { navigate('/dashboard/supplier'); return; }
+    navigate('/dashboard/buyer/post-rfq');
+  };
 
   useEffect(() => {
     api.get('/categories').then(r => setCategories(r.data));
@@ -88,9 +98,9 @@ export default function RFQList() {
               {total} RFQs Found
               {filters.search && <span className="text-muted fw-normal fs-6"> for &quot;{filters.search}&quot;</span>}
             </h5>
-            <Link to="/dashboard/buyer/post-rfq" className="btn btn-sm fw-semibold" style={{ background: '#e94560', color: '#fff' }}>
+            <button onClick={handlePostRFQ} className="btn btn-sm fw-semibold" style={{ background: '#e94560', color: '#fff' }}>
               + Post RFQ
-            </Link>
+            </button>
           </div>
 
           {loading ? (

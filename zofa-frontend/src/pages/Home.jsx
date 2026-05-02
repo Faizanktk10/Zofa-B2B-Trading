@@ -12,18 +12,19 @@ export default function Home() {
   const [rfqs, setRfqs] = useState([]);
   const [categories, setCategories] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get('/rfqs?pageSize=6').then(r => setRfqs(r.data.items || [])).catch(() => {});
+    api.get('/rfqs?pageSize=6').then(r => { setRfqs(r.data.items || []); setTotal(r.data.total || 0); }).catch(() => {});
     api.get('/categories').then(r => setCategories(r.data || [])).catch(() => {});
     api.get('/suppliers').then(r => setSuppliers((r.data || []).filter(s => s.isFeatured).slice(0, 4))).catch(() => {});
   }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    navigate(`/rfqs?search=${search}`);
+    navigate(`/dashboard/supplier`);
   };
 
   return (
@@ -59,11 +60,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats Bar */}
+      {/* Stats Bar — real counts from API */}
       <div style={{ background: '#e94560' }} className="py-3">
         <div className="container">
           <div className="row text-center text-white g-2">
-            {[['10,000+', 'Registered Users'], ['5,000+', 'RFQs Posted'], ['500+', 'Verified Suppliers'], ['50+', 'Cities Covered']].map(([num, label]) => (
+            {[
+              [categories.length > 0 ? `${categories.length}` : '8+', 'Categories'],
+              [rfqs.length > 0 ? `${total}+` : '—', 'Active RFQs'],
+              [suppliers.length > 0 ? `${suppliers.length}+` : '—', 'Verified Suppliers'],
+              ['Pakistan', 'Nationwide Coverage'],
+            ].map(([num, label]) => (
               <div className="col-6 col-md-3" key={label}>
                 <div className="fw-bold fs-5">{num}</div>
                 <div className="small opacity-75">{label}</div>
@@ -78,9 +84,9 @@ export default function Home() {
         <div className="container">
           <h2 className="fw-bold mb-4 text-center">Browse by Category</h2>
           <div className="row g-3">
-            {categories.length > 0 ? categories.map(cat => (
+            {categories.map(cat => (
               <div className="col-6 col-md-3" key={cat.categoryId}>
-                <Link to={`/rfqs?categoryId=${cat.categoryId}`} className="text-decoration-none">
+                <Link to={`/dashboard/supplier`} className="text-decoration-none">
                   <div className="card h-100 text-center border-0 shadow-sm p-3"
                     style={{ transition: 'transform 0.2s', cursor: 'pointer' }}
                     onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
@@ -90,22 +96,7 @@ export default function Home() {
                   </div>
                 </Link>
               </div>
-            )) : (
-              // Placeholder categories when API is loading/offline
-              ['Scrap', 'Textile', 'Agriculture', 'Machinery', 'Packaging', 'Raw Materials', 'Chemicals', 'Electronics'].map(name => (
-                <div className="col-6 col-md-3" key={name}>
-                  <Link to="/rfqs" className="text-decoration-none">
-                    <div className="card h-100 text-center border-0 shadow-sm p-3"
-                      style={{ transition: 'transform 0.2s', cursor: 'pointer' }}
-                      onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-                      onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-                      <div style={{ fontSize: '2.5rem' }}>{CATEGORY_ICONS[name] || '📋'}</div>
-                      <div className="fw-semibold mt-2" style={{ color: '#1a1a2e' }}>{name}</div>
-                    </div>
-                  </Link>
-                </div>
-              ))
-            )}
+            ))}
           </div>
         </div>
       </section>
@@ -115,7 +106,6 @@ export default function Home() {
         <div className="container">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h2 className="fw-bold mb-0">Latest RFQs</h2>
-            <Link to="/rfqs" className="btn btn-outline-danger btn-sm">View All →</Link>
           </div>
           {rfqs.length > 0 ? (
             <div className="row g-3">

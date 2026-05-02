@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -6,7 +6,7 @@ import SEO from '../components/SEO';
 
 const FEATURES = [
   { label: 'RFQ Marketplace access', free: '✅', premium: '✅', lead: '✅' },
-  { label: 'Quotes per day', free: '1 only', premium: 'Unlimited', lead: '5 per day' },
+  { label: 'Quotes per day', free: '5 per day', premium: 'Unlimited', lead: '5 per day' },
   { label: 'Buyer contact (email + phone)', free: '❌', premium: '✅ Full access', lead: '✅ Per RFQ' },
   { label: 'Search ranking', free: 'Normal', premium: '🔝 Priority', lead: 'Normal' },
   { label: 'Verified badge', free: '❌', premium: '✅ Premium badge', lead: '❌' },
@@ -19,12 +19,19 @@ export default function Pricing() {
   const navigate = useNavigate();
   const isAuthenticated = Boolean(user || localStorage.getItem('token'));
   const [billing, setBilling] = useState('Monthly');
-  const [form, setForm] = useState({ paymentMethod: 'JazzCash', referenceNo: '', proofImage: '' });
-  const [proofFileName, setProofFileName] = useState('');
-  const [msg, setMsg] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('premium');
+  const [stats, setStats] = useState({ buyers: '—', suppliers: '—', rfqs: '—', quotations: '—' });
+
+  useEffect(() => {
+    api.get('/admin/stats')
+      .then(r => setStats({
+        buyers: r.data.totalBuyers.toLocaleString(),
+        suppliers: r.data.totalSuppliers.toLocaleString(),
+        rfqs: r.data.totalRFQs.toLocaleString(),
+        quotations: r.data.totalQuotations.toLocaleString(),
+      }))
+      .catch(() => {});
+  }, []);
 
   const shouldSelectPlanFromEvent = (event) => {
     const interactiveElement = event.target.closest('a,button,input,select,textarea,label');
@@ -34,43 +41,9 @@ export default function Pricing() {
   const price = billing === 'Yearly' ? 20000 : 2500;
   const saving = billing === 'Yearly' ? 'Save PKR 10,000' : null;
 
-  const handleUpgrade = async (e) => {
-    e.preventDefault();
-    if (!user) return navigate('/login');
-    setLoading(true);
-    setMsg('');
-    try {
-      await api.post('/subscriptions/upgrade', { billingCycle: billing, planType: 'Premium', ...form });
-      setMsg('success');
-    } catch (err) {
-      setMsg('error:' + (err.response?.data?.message || 'Failed to submit.'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleProofUpload = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      setProofFileName('');
-      setForm((prev) => ({ ...prev, proofImage: '' }));
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setForm((prev) => ({ ...prev, proofImage: String(reader.result || '') }));
-      setProofFileName(file.name);
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleUpgradeRedirect = () => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    navigate('/pricing');
+    if (!isAuthenticated) { navigate('/login'); return; }
+    navigate('/upgrade');
   };
 
   return (
@@ -104,15 +77,15 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* Stats */}
+      {/* Stats — real data from API */}
       <div style={{ background: '#e94560' }} className="py-4">
         <div className="container">
           <div className="row text-center text-white g-3">
             {[
-              { num: '10,000+', label: 'Active Buyers' },
-              { num: '500+', label: 'Active Suppliers' },
-              { num: '200+', label: 'Daily RFQs' },
-              { num: '50,000+', label: 'Product Postings' },
+              { num: stats.buyers, label: 'Active Buyers' },
+              { num: stats.suppliers, label: 'Active Suppliers' },
+              { num: stats.rfqs, label: 'Total RFQs Posted' },
+              { num: stats.quotations, label: 'Quotes Submitted' },
             ].map(s => (
               <div className="col-6 col-md-3" key={s.label}>
                 <div className="fw-bold" style={{ fontSize: '1.8rem' }}>{s.num}</div>
@@ -172,7 +145,7 @@ export default function Pricing() {
                 <ul className="list-unstyled mb-4 d-flex flex-column gap-2">
                   {[
                     '✅ RFQ Marketplace access',
-                    '✅ 1 quote per day',
+                    '✅ 5 quotes per day',
                     '✅ Basic profile listing',
                     '✅ Platform messaging',
                     '❌ Buyer contact details',
@@ -234,80 +207,14 @@ export default function Pricing() {
                   ))}
                 </ul>
 
-                {!showForm ? (
                   <button className="btn w-100 fw-bold py-2 mt-auto"
                     style={{ background: '#e94560', color: '#fff' }}
                     onClick={() => {
-                      if (!isAuthenticated) {
-                        navigate('/login');
-                        return;
-                      }
-                      if (user?.role === 'Supplier') {
-                        setShowForm(true);
-                        return;
-                      }
-                      navigate('/pricing');
+                      if (!isAuthenticated) { navigate('/login'); return; }
+                      navigate('/upgrade');
                     }}>
                     Upgrade Now →
                   </button>
-                ) : msg === 'success' ? (
-                  <div className="alert alert-success py-2 text-center small mb-0">
-                    ✅ Payment submitted! Account will be upgraded after admin confirmation (within 2 hours).
-                  </div>
-                ) : (
-                  <form onSubmit={handleUpgrade}>
-                    <div className="alert py-2 small mb-2" style={{ background: '#f8f9fa', border: '1px solid #dee2e6' }}>
-                      <div className="fw-semibold mb-1">Payment Information</div>
-                      <div><strong>Bank Name:</strong> Meezan Bank</div>
-                      <div><strong>Account Title:</strong> Muhammad Faizan</div>
-                      <div><strong>IBAN:</strong> PK10 MEZN 0099 8401 1129 6632</div>
-                      <div><strong>Account Number:</strong> 99840111296632</div>
-                      <div className="mt-1"><strong>JazzCash / EasyPaisa:</strong> available on request (placeholder)</div>
-                      <div className="mt-1 text-danger fw-semibold">After payment, admin approval is required before activation.</div>
-                    </div>
-                    {msg.startsWith('error:') && (
-                      <div className="alert alert-danger py-2 small mb-2">{msg.replace('error:', '')}</div>
-                    )}
-                    <div className="mb-2">
-                      <select className="form-select form-select-sm" value={form.paymentMethod}
-                        onChange={e => setForm({ ...form, paymentMethod: e.target.value })}>
-                        <option>JazzCash</option>
-                        <option>EasyPaisa</option>
-                        <option>Bank Transfer</option>
-                      </select>
-                    </div>
-                    <div className="mb-2">
-                      <input className="form-control form-control-sm" required
-                        placeholder="Transaction Reference No."
-                        value={form.referenceNo}
-                        onChange={e => setForm({ ...form, referenceNo: e.target.value })} />
-                    </div>
-                    <div className="mb-2">
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        required
-                        className="form-control form-control-sm"
-                        onChange={handleProofUpload}
-                      />
-                      {proofFileName && <div className="small text-muted mt-1">Uploaded: {proofFileName}</div>}
-                    </div>
-                    <p className="text-muted" style={{ fontSize: '0.7rem' }}>
-                      User must upload payment proof after payment. Admin will manually verify and activate the plan.
-                    </p>
-                    <div className="alert alert-warning py-2 small mb-2">
-                      Send payment proof on WhatsApp or email for activation:
-                      {' '}
-                      <a href="https://wa.me/923371256673" target="_blank" rel="noreferrer">WhatsApp</a>
-                      {' '}|{' '}
-                      <a href="mailto:faizanktk2006@gmail.com">faizanktk2006@gmail.com</a>
-                    </div>
-                    <button type="submit" className="btn w-100 btn-sm fw-bold" disabled={loading}
-                      style={{ background: '#e94560', color: '#fff' }}>
-                      {loading ? 'Submitting...' : `Submit Payment — PKR ${price.toLocaleString()}`}
-                    </button>
-                  </form>
-                )}
               </div>
             </div>
 
@@ -347,10 +254,17 @@ export default function Pricing() {
                 <div className="alert py-2 small mb-3" style={{ background: '#f0f8ff', border: '1px solid #bee3f8' }}>
                   💡 Best for occasional suppliers who need flexible lead access
                 </div>
-                <Link to="/rfqs"
-                  className={`btn w-100 fw-semibold mt-auto ${selectedPlan === 'lead' ? 'btn-danger' : 'btn-outline-dark'}`}>
+                <button
+                  type="button"
+                  className={`btn w-100 fw-semibold mt-auto ${selectedPlan === 'lead' ? 'btn-danger' : 'btn-outline-dark'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isAuthenticated) { navigate('/login'); return; }
+                    navigate('/upgrade');
+                  }}
+                >
                   Open RFQ Marketplace
-                </Link>
+                </button>
               </div>
             </div>
           </div>

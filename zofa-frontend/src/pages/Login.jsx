@@ -45,7 +45,10 @@ export default function Login() {
                     value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
                 </div>
                 <div className="mb-4">
-                  <label className="form-label fw-semibold">Password</label>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <label className="form-label fw-semibold">Password</label>
+                    <Link to="/forgot-password" style={{ color: '#e94560', fontSize: '0.85rem' }}>Forgot password?</Link>
+                  </div>
                   <input type="password" className="form-control" required
                     value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
                 </div>

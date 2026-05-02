@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ZofaB2B.API.Data;
 
@@ -11,9 +12,11 @@ using ZofaB2B.API.Data;
 namespace ZofaB2B.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260501204227_AddMainProductsToSupplierProfile")]
+    partial class AddMainProductsToSupplierProfile
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -168,37 +171,6 @@ namespace ZofaB2B.API.Migrations
                     b.HasIndex("SenderId");
 
                     b.ToTable("Messages");
-                });
-
-            modelBuilder.Entity("ZofaB2B.API.Models.PasswordResetToken", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsUsed")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("PasswordResetTokens");
                 });
 
             modelBuilder.Entity("ZofaB2B.API.Models.Payment", b =>
@@ -518,7 +490,7 @@ namespace ZofaB2B.API.Migrations
                             IsActive = true,
                             IsPremium = false,
                             IsVerified = true,
-                            PasswordHash = "$2a$11$uLwc2nJds6kZdU1RW9lAyuuKUV/xoMtRHoD.KoZw.4DkjY0qjIqia",
+                            PasswordHash = "$2a$11$YHzNNIha7PijZz2kajzQhuLVkxH2.6IsRyoGtqd9FTxibMICvhv4K",
                             PlanType = "Free",
                             Role = "Admin"
                         });
@@ -570,17 +542,6 @@ namespace ZofaB2B.API.Migrations
                     b.Navigation("Receiver");
 
                     b.Navigation("Sender");
-                });
-
-            modelBuilder.Entity("ZofaB2B.API.Models.PasswordResetToken", b =>
-                {
-                    b.HasOne("ZofaB2B.API.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ZofaB2B.API.Models.Payment", b =>

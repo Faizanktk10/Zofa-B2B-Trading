@@ -21,6 +21,23 @@ namespace ZofaB2B.API.DTOs
         [Required] public string Password { get; set; } = string.Empty;
     }
 
+    public class ForgotPasswordDto
+    {
+        [Required, EmailAddress] public string Email { get; set; } = string.Empty;
+    }
+
+    public class ResetPasswordDto
+    {
+        [Required] public string Token { get; set; } = string.Empty;
+        [Required, MinLength(6)] public string NewPassword { get; set; } = string.Empty;
+    }
+
+    public class UploadImageDto
+    {
+        [Required] public string Base64Data { get; set; } = string.Empty;
+        public string Folder { get; set; } = "zofa-uploads";
+    }
+
     public class AuthResponseDto
     {
         public string Token { get; set; } = string.Empty;
@@ -46,6 +63,7 @@ namespace ZofaB2B.API.DTOs
     public class RFQListDto
     {
         public int RFQId { get; set; }
+        public int BuyerId { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Quantity { get; set; } = string.Empty;
         public string Unit { get; set; } = string.Empty;
@@ -84,8 +102,10 @@ namespace ZofaB2B.API.DTOs
         public int QuotationId { get; set; }
         public int RFQId { get; set; }
         public string RFQTitle { get; set; } = string.Empty;
+        public int SupplierId { get; set; }
         public string SupplierName { get; set; } = string.Empty;
         public string? SupplierCompany { get; set; }
+        public int BuyerId { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
         public int DeliveryDays { get; set; }
@@ -107,9 +127,24 @@ namespace ZofaB2B.API.DTOs
         public int MessageId { get; set; }
         public int SenderId { get; set; }
         public string SenderName { get; set; } = string.Empty;
+        public int ReceiverId { get; set; }
+        public string ReceiverName { get; set; } = string.Empty;
         public string Body { get; set; } = string.Empty;
+        public int? RFQId { get; set; }
         public bool IsRead { get; set; }
         public DateTime SentAt { get; set; }
+    }
+
+    public class ConversationDto
+    {
+        public int ContactUserId { get; set; }
+        public string ContactName { get; set; } = string.Empty;
+        public string? ContactCompany { get; set; }
+        public string LastMessage { get; set; } = string.Empty;
+        public DateTime LastMessageAt { get; set; }
+        public int UnreadCount { get; set; }
+        public int? RFQId { get; set; }
+        public string? RFQTitle { get; set; }
     }
 
     // ─── Subscription / Payment ─────────────────────────────
@@ -156,6 +191,7 @@ namespace ZofaB2B.API.DTOs
         public string? BusinessType { get; set; }
         public int YearsInBusiness { get; set; }
         public string? Description { get; set; }
+        public string? MainProducts { get; set; }
         public string? Website { get; set; }
         public string? Phone { get; set; }
         public string? City { get; set; }
@@ -172,10 +208,12 @@ namespace ZofaB2B.API.DTOs
         public string? BusinessType { get; set; }
         public int YearsInBusiness { get; set; }
         public string? Description { get; set; }
+        public string? MainProducts { get; set; }
         public string? LogoUrl { get; set; }
         public string? Website { get; set; }
         public bool IsFeatured { get; set; }
         public decimal Rating { get; set; }
         public bool IsPremium { get; set; }
+        public bool IsVerified { get; set; }
     }
 }

@@ -40,6 +40,21 @@ namespace ZofaB2B.API.Controllers
             });
         }
 
+        // GET /api/admin/stats — public stats for pricing page
+        [AllowAnonymous]
+        [HttpGet("stats")]
+        public async Task<IActionResult> PublicStats()
+        {
+            var now = DateTime.UtcNow;
+            return Ok(new
+            {
+                TotalBuyers = await _db.Users.CountAsync(u => u.Role == "Buyer"),
+                TotalSuppliers = await _db.Users.CountAsync(u => u.Role == "Supplier"),
+                TotalRFQs = await _db.RFQs.CountAsync(),
+                TotalQuotations = await _db.Quotations.CountAsync()
+            });
+        }
+
         // GET /api/admin/users
         [HttpGet("users")]
         public async Task<IActionResult> GetUsers([FromQuery] string? role, [FromQuery] string? search)
@@ -169,7 +184,7 @@ namespace ZofaB2B.API.Controllers
 
                 payment.User.IsPremium = true;
                 payment.User.PlanType = approvedPlan;
-                payment.User.SubscriptionExpiry = DateTime.UtcNow.AddDays(30);
+                payment.User.SubscriptionExpiry = endDate;
             }
 
             await _db.SaveChangesAsync();

@@ -111,7 +111,6 @@ export default function BuyerDashboard() {
                 <span className="fw-semibold text-muted small">QUICK ACTIONS:</span>
                 <Link to="/dashboard/buyer/post-rfq" className="btn btn-sm fw-semibold"
                   style={{ background: '#e94560', color: '#fff' }}>📤 Post RFQ</Link>
-                <Link to="/rfqs" className="btn btn-sm btn-outline-secondary">🔍 Browse Marketplace</Link>
                 <Link to="/categories" className="btn btn-sm btn-outline-secondary">🏭 Find Suppliers</Link>
                 <Link to="/messages" className="btn btn-sm btn-outline-secondary">💬 Messages</Link>
               </div>
@@ -321,7 +320,7 @@ export default function BuyerDashboard() {
                 <div className="fw-bold mb-1">Tip: Get more quotes faster</div>
                 <div className="small opacity-75">Add a target price and detailed description to your RFQ. Suppliers respond faster to well-described requirements.</div>
               </div>
-              <Link to="/rfqs" className="btn btn-warning btn-sm fw-bold">Browse Suppliers</Link>
+              <Link to="/categories" className="btn btn-warning btn-sm fw-bold">Find Suppliers</Link>
             </div>
           </div>
         )}

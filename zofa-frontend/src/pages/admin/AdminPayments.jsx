@@ -22,13 +22,12 @@ export default function AdminPayments() {
   }, [user, navigate, load]);
 
   const confirm = async (id) => {
-    const planType = planByPayment[id] || 'Premium';
-    await api.patch(`/admin/payments/${id}/confirm?planType=${planType}`);
+    await api.patch(`/payments/${id}/approve`);
     setPayments(payments.filter(p => p.paymentId !== id));
   };
 
   const reject = async (id) => {
-    await api.patch(`/admin/payments/${id}/reject`);
+    await api.patch(`/payments/${id}/reject`);
     setPayments(payments.filter(p => p.paymentId !== id));
   };
 
@@ -81,18 +80,13 @@ export default function AdminPayments() {
                   <td className="text-muted small">{new Date(p.createdAt).toLocaleDateString('en-PK')}</td>
                   <td>
                     {p.status === 'Pending' && (
-                      <div className="d-flex gap-1 align-items-center">
-                        <select
-                          className="form-select form-select-sm"
-                          style={{ minWidth: 100 }}
-                          value={planByPayment[p.paymentId] || p.plan || 'Premium'}
-                          onChange={(e) => setPlanByPayment((prev) => ({ ...prev, [p.paymentId]: e.target.value }))}
-                        >
-                          <option value="Premium">Premium</option>
-                          <option value="Star">Star</option>
-                        </select>
-                        <button className="btn btn-sm btn-success" onClick={() => confirm(p.paymentId)}>✓</button>
-                        <button className="btn btn-sm btn-outline-danger" onClick={() => reject(p.paymentId)}>✗</button>
+                      <div className="d-flex gap-1">
+                        <button className="btn btn-sm btn-success fw-semibold" onClick={() => confirm(p.paymentId)}>
+                          ✓ Approve
+                        </button>
+                        <button className="btn btn-sm btn-outline-danger" onClick={() => reject(p.paymentId)}>
+                          ✗ Reject
+                        </button>
                       </div>
                     )}
                   </td>

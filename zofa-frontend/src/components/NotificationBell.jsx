@@ -8,13 +8,13 @@ export default function NotificationBell() {
   const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
+  const [conversations, setConversations] = useState([]);
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const { data } = await api.get('/messages/inbox');
-      setUnread(data.filter(m => !m.isRead).length);
-      setMessages(data.slice(0, 5));
+      const { data } = await api.get('/messages/conversations');
+      setConversations(data.slice(0, 5));
+      setUnread(data.reduce((a, c) => a + c.unreadCount, 0));
     } catch {
       // silently fail
     }
@@ -51,31 +51,30 @@ export default function NotificationBell() {
           <div className="position-absolute end-0 mt-2 card border-0 shadow-lg"
             style={{ width: 320, zIndex: 1000, borderRadius: 12 }}>
             <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
-              <span className="fw-semibold">Notifications</span>
+              <span className="fw-semibold">Messages</span>
               {unread > 0 && <span className="badge bg-danger">{unread} unread</span>}
             </div>
             <div style={{ maxHeight: 300, overflowY: 'auto' }}>
-              {messages.length === 0 ? (
+              {conversations.length === 0 ? (
                 <div className="text-center text-muted p-4 small">No messages yet.</div>
               ) : (
-                messages.map(m => (
-                  <div key={m.messageId}
-                    className={`p-3 border-bottom d-flex gap-2 align-items-start ${!m.isRead ? 'bg-light' : ''}`}
+                conversations.map(c => (
+                  <div key={c.contactUserId}
+                    className={`p-3 border-bottom d-flex gap-2 align-items-start ${c.unreadCount > 0 ? 'bg-light' : ''}`}
                     style={{ cursor: 'pointer' }}
-                    onClick={() => { setOpen(false); navigate(`/messages?with=${m.senderId}`); }}>
+                    onClick={() => { setOpen(false); navigate(`/messages?with=${c.contactUserId}`); }}>
                     <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
                       style={{ width: 34, height: 34, background: '#e94560', fontSize: '0.8rem' }}>
-                      {m.senderName[0]}
+                      {(c.contactName || '?')[0].toUpperCase()}
                     </div>
-                    <div className="overflow-hidden">
-                      <div className="d-flex justify-content-between">
-                        <span className="fw-semibold small">{m.senderName}</span>
-                        {!m.isRead && <span className="rounded-circle bg-danger d-inline-block" style={{ width: 8, height: 8, marginTop: 4 }} />}
+                    <div className="overflow-hidden flex-grow-1">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span className="fw-semibold small">{c.contactName}</span>
+                        {c.unreadCount > 0 && (
+                          <span className="badge rounded-pill bg-danger" style={{ fontSize: '0.6rem' }}>{c.unreadCount}</span>
+                        )}
                       </div>
-                      <div className="text-muted small text-truncate">{m.body}</div>
-                      <div className="text-muted" style={{ fontSize: '0.65rem' }}>
-                        {new Date(m.sentAt).toLocaleString('en-PK', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </div>
+                      <div className="text-muted small text-truncate">{c.lastMessage}</div>
                     </div>
                   </div>
                 ))

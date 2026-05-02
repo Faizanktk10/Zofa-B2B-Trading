@@ -5,6 +5,7 @@ using System.Security.Claims;
 using ZofaB2B.API.Data;
 using ZofaB2B.API.DTOs;
 using ZofaB2B.API.Models;
+using ZofaB2B.API.Services;
 
 namespace ZofaB2B.API.Controllers
 {
@@ -14,12 +15,17 @@ namespace ZofaB2B.API.Controllers
     public class MessagesController : ControllerBase
     {
         private readonly AppDbContext _db;
-        public MessagesController(AppDbContext db) => _db = db;
+        private readonly EmailService _email;
+        public MessagesController(AppDbContext db, EmailService email) { _db = db; _email = email; }
         private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
+        // POST /api/messages
         [HttpPost]
         public async Task<IActionResult> Send(SendMessageDto dto)
         {
+            var receiver = await _db.Users.FindAsync(dto.ReceiverId);
+            if (receiver == null) return NotFound(new { message = "Recipient not found." });
+
             var msg = new Message
             {
                 SenderId = CurrentUserId,
@@ -29,44 +35,81 @@ namespace ZofaB2B.API.Controllers
             };
             _db.Messages.Add(msg);
             await _db.SaveChangesAsync();
-            return Ok(new { msg.MessageId });
+
+            // Email notification — only if receiver has no unread messages from this sender already
+            var hasUnread = await _db.Messages.AnyAsync(m =>
+                m.SenderId == CurrentUserId && m.ReceiverId == dto.ReceiverId && !m.IsRead && m.MessageId != msg.MessageId);
+            if (!hasUnread)
+            {
+                var sender = await _db.Users.FindAsync(CurrentUserId);
+                _ = _email.SendNewMessageAsync(receiver.Email, receiver.FullName, sender?.CompanyName ?? sender?.FullName ?? "Someone");
+            }
+
+            return Ok(new
+            {
+                msg.MessageId, msg.SenderId, msg.ReceiverId,
+                msg.Body, msg.RFQId, msg.IsRead, msg.SentAt
+            });
         }
 
-        [HttpGet("inbox")]
-        public async Task<IActionResult> Inbox()
+        // GET /api/messages/conversations — all unique threads for sidebar
+        [HttpGet("conversations")]
+        public async Task<IActionResult> Conversations()
         {
-            var messages = await _db.Messages
+            var userId = CurrentUserId;
+
+            var allMessages = await _db.Messages
                 .Include(m => m.Sender)
-                .Where(m => m.ReceiverId == CurrentUserId)
+                .Include(m => m.Receiver)
+                .Where(m => m.SenderId == userId || m.ReceiverId == userId)
                 .OrderByDescending(m => m.SentAt)
-                .Select(m => new MessageDto
-                {
-                    MessageId = m.MessageId,
-                    SenderId = m.SenderId,
-                    SenderName = m.Sender.FullName,
-                    Body = m.Body,
-                    IsRead = m.IsRead,
-                    SentAt = m.SentAt
-                })
                 .ToListAsync();
 
-            return Ok(messages);
+            var conversations = allMessages
+                .GroupBy(m => m.SenderId == userId ? m.ReceiverId : m.SenderId)
+                .Select(g =>
+                {
+                    var latest = g.First();
+                    var contact = latest.SenderId == userId ? latest.Receiver : latest.Sender;
+                    var unread = g.Count(m => m.ReceiverId == userId && !m.IsRead);
+                    var rfqMsg = g.FirstOrDefault(m => m.RFQId.HasValue);
+                    return new ConversationDto
+                    {
+                        ContactUserId = contact.UserId,
+                        ContactName = contact.CompanyName ?? contact.FullName,
+                        ContactCompany = contact.CompanyName,
+                        LastMessage = latest.Body,
+                        LastMessageAt = latest.SentAt,
+                        UnreadCount = unread,
+                        RFQId = rfqMsg?.RFQId
+                    };
+                })
+                .OrderByDescending(c => c.LastMessageAt)
+                .ToList();
+
+            return Ok(conversations);
         }
 
+        // GET /api/messages/{userId} — full thread with a specific user
         [HttpGet("{userId}")]
         public async Task<IActionResult> Thread(int userId)
         {
+            var me = CurrentUserId;
             var messages = await _db.Messages
                 .Include(m => m.Sender)
-                .Where(m => (m.SenderId == CurrentUserId && m.ReceiverId == userId) ||
-                            (m.SenderId == userId && m.ReceiverId == CurrentUserId))
+                .Include(m => m.Receiver)
+                .Where(m => (m.SenderId == me && m.ReceiverId == userId) ||
+                            (m.SenderId == userId && m.ReceiverId == me))
                 .OrderBy(m => m.SentAt)
                 .Select(m => new MessageDto
                 {
                     MessageId = m.MessageId,
                     SenderId = m.SenderId,
-                    SenderName = m.Sender.FullName,
+                    SenderName = m.Sender.CompanyName ?? m.Sender.FullName,
+                    ReceiverId = m.ReceiverId,
+                    ReceiverName = m.Receiver.CompanyName ?? m.Receiver.FullName,
                     Body = m.Body,
+                    RFQId = m.RFQId,
                     IsRead = m.IsRead,
                     SentAt = m.SentAt
                 })
@@ -75,12 +118,34 @@ namespace ZofaB2B.API.Controllers
             return Ok(messages);
         }
 
+        // GET /api/messages/inbox — unread count only (for notification bell)
+        [HttpGet("inbox")]
+        public async Task<IActionResult> Inbox()
+        {
+            var unreadCount = await _db.Messages
+                .CountAsync(m => m.ReceiverId == CurrentUserId && !m.IsRead);
+            return Ok(new { unreadCount });
+        }
+
+        // PATCH /api/messages/{id}/read
         [HttpPatch("{id}/read")]
         public async Task<IActionResult> MarkRead(int id)
         {
             var msg = await _db.Messages.FirstOrDefaultAsync(m => m.MessageId == id && m.ReceiverId == CurrentUserId);
             if (msg == null) return NotFound();
             msg.IsRead = true;
+            await _db.SaveChangesAsync();
+            return NoContent();
+        }
+
+        // PATCH /api/messages/read-all/{userId} — mark all messages from a user as read
+        [HttpPatch("read-all/{userId}")]
+        public async Task<IActionResult> MarkAllRead(int userId)
+        {
+            var msgs = await _db.Messages
+                .Where(m => m.SenderId == userId && m.ReceiverId == CurrentUserId && !m.IsRead)
+                .ToListAsync();
+            msgs.ForEach(m => m.IsRead = true);
             await _db.SaveChangesAsync();
             return NoContent();
         }

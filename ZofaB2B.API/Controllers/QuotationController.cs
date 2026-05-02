@@ -16,11 +16,13 @@ namespace ZofaB2B.API.Controllers
     {
         private readonly AppDbContext _db;
         private readonly SubscriptionService _subService;
+        private readonly EmailService _email;
 
-        public QuotationController(AppDbContext db, SubscriptionService subService)
+        public QuotationController(AppDbContext db, SubscriptionService subService, EmailService email)
         {
             _db = db;
             _subService = subService;
+            _email = email;
         }
 
         private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -34,13 +36,13 @@ namespace ZofaB2B.API.Controllers
             if (rfq == null || rfq.Status != "Open")
                 return BadRequest(new { message = "RFQ not found or not open." });
 
-            // Check daily limit for free suppliers — 1 quote per day
+            // Check daily limit for free suppliers — 5 quotes per day
             bool isPremium = await _subService.IsPremiumAsync(CurrentUserId);
             if (!isPremium)
             {
                 int todayCount = await _subService.GetTodayQuoteCountAsync(CurrentUserId);
-                if (todayCount >= 1)
-                    return BadRequest(new { message = "Free plan allows 1 quote per day. Upgrade to Premium for unlimited quotes." });
+                if (todayCount >= 5)
+                    return BadRequest(new { message = "Free plan allows 5 quotes per day. Upgrade to Premium for unlimited quotes." });
             }
 
             // Prevent duplicate quote
@@ -61,6 +63,16 @@ namespace ZofaB2B.API.Controllers
 
             _db.Quotations.Add(quote);
             await _db.SaveChangesAsync();
+
+            // Email notification to buyer
+            var rfqWithBuyer = await _db.RFQs.Include(r => r.Buyer).FirstAsync(r => r.RFQId == dto.RFQId);
+            var supplier = await _db.Users.FindAsync(CurrentUserId);
+            _ = _email.SendNewQuoteAsync(
+                rfqWithBuyer.Buyer.Email,
+                rfqWithBuyer.Buyer.FullName,
+                rfqWithBuyer.Title,
+                supplier?.CompanyName ?? supplier?.FullName ?? "A Supplier");
+
             return Ok(new { quote.QuotationId });
         }
 
@@ -82,8 +94,10 @@ namespace ZofaB2B.API.Controllers
                     QuotationId = q.QuotationId,
                     RFQId = q.RFQId,
                     RFQTitle = q.RFQ.Title,
+                    SupplierId = q.SupplierId,
                     SupplierName = q.Supplier.FullName,
                     SupplierCompany = q.Supplier.CompanyName,
+                    BuyerId = q.RFQ.BuyerId,
                     UnitPrice = q.UnitPrice,
                     TotalPrice = q.TotalPrice,
                     DeliveryDays = q.DeliveryDays,
@@ -110,8 +124,10 @@ namespace ZofaB2B.API.Controllers
                     QuotationId = q.QuotationId,
                     RFQId = q.RFQId,
                     RFQTitle = q.RFQ.Title,
+                    SupplierId = q.SupplierId,
                     SupplierName = q.Supplier.FullName,
                     SupplierCompany = q.Supplier.CompanyName,
+                    BuyerId = q.RFQ.BuyerId,
                     UnitPrice = q.UnitPrice,
                     TotalPrice = q.TotalPrice,
                     DeliveryDays = q.DeliveryDays,
@@ -135,6 +151,12 @@ namespace ZofaB2B.API.Controllers
             quote.Status = "Accepted";
             quote.RFQ.Status = "Awarded";
             await _db.SaveChangesAsync();
+
+            // Email notification to supplier
+            var supplier = await _db.Users.FindAsync(quote.SupplierId);
+            if (supplier != null)
+                _ = _email.SendQuoteAcceptedAsync(supplier.Email, supplier.FullName, quote.RFQ.Title);
+
             return NoContent();
         }
 

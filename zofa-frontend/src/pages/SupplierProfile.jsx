@@ -39,6 +39,7 @@ export default function SupplierProfile() {
 
             <div className="d-flex justify-content-center gap-2 flex-wrap mb-3">
               {supplier.isPremium && <span className="badge bg-warning text-dark">⭐ Premium Supplier</span>}
+              {supplier.isVerified && <span className="badge bg-success">✓ Verified</span>}
               {supplier.isFeatured && <span className="badge" style={{ background: '#e94560' }}>Featured</span>}
             </div>
 
@@ -51,12 +52,6 @@ export default function SupplierProfile() {
               )}
               {supplier.yearsInBusiness > 0 && (
                 <p className="small mb-1"><span className="text-muted">📅 Experience:</span> <strong>{supplier.yearsInBusiness} years</strong></p>
-              )}
-              {supplier.website && (
-                <p className="small mb-1">
-                  <span className="text-muted">🌐 Website:</span>{' '}
-                  <a href={supplier.website} target="_blank" rel="noreferrer" style={{ color: '#e94560' }}>{supplier.website}</a>
-                </p>
               )}
               {supplier.rating > 0 && (
                 <p className="small mb-1">
@@ -89,6 +84,20 @@ export default function SupplierProfile() {
             <div className="card border-0 shadow-sm p-4 mb-4">
               <h6 className="fw-bold mb-3">About the Company</h6>
               <p className="text-muted mb-0" style={{ lineHeight: 1.8 }}>{supplier.description}</p>
+            </div>
+          )}
+
+          {/* Main Products */}
+          {supplier.mainProducts && (
+            <div className="card border-0 shadow-sm p-4 mb-4">
+              <h6 className="fw-bold mb-3">📦 Main Products</h6>
+              <div className="d-flex flex-wrap gap-2">
+                {supplier.mainProducts.split(',').map(p => p.trim()).filter(Boolean).map(product => (
+                  <span key={product} className="badge bg-light text-dark border px-3 py-2" style={{ fontSize: '0.85rem' }}>
+                    {product}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 

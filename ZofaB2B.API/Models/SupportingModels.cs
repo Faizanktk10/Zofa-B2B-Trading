@@ -39,6 +39,17 @@ namespace ZofaB2B.API.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
+    public class PasswordResetToken
+    {
+        public int Id { get; set; }
+        public int UserId { get; set; }
+        public User User { get; set; } = null!;
+        public string Token { get; set; } = string.Empty;
+        public DateTime ExpiresAt { get; set; }
+        public bool IsUsed { get; set; } = false;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+
     public class SupplierProfile
     {
         public int SupplierProfileId { get; set; }
@@ -47,6 +58,7 @@ namespace ZofaB2B.API.Models
         public string? BusinessType { get; set; }
         public int YearsInBusiness { get; set; }
         public string? Description { get; set; }
+        public string? MainProducts { get; set; } // comma-separated
         public string? LogoUrl { get; set; }
         public string? Website { get; set; }
         public bool IsFeatured { get; set; } = false;

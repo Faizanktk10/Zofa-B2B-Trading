@@ -7,12 +7,15 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import RFQList from './pages/RFQList';
 import RFQDetail from './pages/RFQDetail';
 import BuyerDashboard from './pages/BuyerDashboard';
 import SupplierDashboard from './pages/SupplierDashboard';
 import PostRFQ from './pages/PostRFQ';
 import Pricing from './pages/Pricing';
+import Upgrade from './pages/Upgrade';
 import Suppliers from './pages/Suppliers';
 import SupplierProfile from './pages/SupplierProfile';
 import Messages from './pages/Messages';
@@ -61,6 +64,8 @@ export default function App() {
           <Route path="/" element={<Layout><Home /></Layout>} />
           <Route path="/login" element={<Layout noFooter><Login /></Layout>} />
           <Route path="/register" element={<Layout noFooter><Register /></Layout>} />
+          <Route path="/forgot-password" element={<Layout noFooter><ForgotPassword /></Layout>} />
+          <Route path="/reset-password" element={<Layout noFooter><ResetPassword /></Layout>} />
           <Route path="/rfqs" element={<Layout><RFQList /></Layout>} />
           <Route path="/rfqs/:id" element={<Layout><RFQDetail /></Layout>} />
           <Route path="/suppliers" element={<Layout><Categories /></Layout>} />
@@ -68,6 +73,7 @@ export default function App() {
           <Route path="/buyers" element={<Layout><BuyerPage /></Layout>} />
           <Route path="/categories" element={<Layout><Suppliers /></Layout>} />
           <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
+          <Route path="/upgrade" element={<Layout><Upgrade /></Layout>} />
           <Route path="/about" element={<Layout><About /></Layout>} />
           <Route path="/contact" element={<Layout><Contact /></Layout>} />
           <Route path="/terms" element={<Layout><Terms /></Layout>} />

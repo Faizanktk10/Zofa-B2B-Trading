@@ -85,25 +85,25 @@ export default function RFQDetail() {
             <p className="text-muted">{rfq.description}</p>
           </div>
 
-          {/* Buyer Contact */}
+          {/* Buyer Contact — internal messaging only, no direct contact exposed */}
           <div className="card border-0 shadow-sm p-4 mb-4">
-            <h6 className="fw-bold mb-3">Buyer Contact</h6>
-            {rfq.buyerEmail || rfq.buyerPhone ? (
-              <a
-                href={rfq.buyerEmail ? `mailto:${rfq.buyerEmail}` : `tel:${rfq.buyerPhone}`}
-                className="btn btn-outline-dark btn-sm fw-semibold"
-              >
-                Contact Buyer
-              </a>
+            <h6 className="fw-bold mb-3">Contact Buyer</h6>
+            {user?.role === 'Buyer' && user?.userId === rfq.buyerId ? (
+              <p className="text-muted small mb-0">This is your RFQ.</p>
+            ) : user?.role === 'Supplier' ? (
+              <>
+                <p className="text-muted small mb-2">Send a message to the buyer through the platform.</p>
+                <button
+                  className="btn fw-semibold btn-sm"
+                  style={{ background: '#e94560', color: '#fff' }}
+                  onClick={() => navigate(`/messages?with=${rfq.buyerId}`)}
+                >
+                  💬 Contact Buyer via Messages
+                </button>
+              </>
             ) : (
-              <div className="alert alert-warning py-2 mb-0">
-                Buyer contact is hidden.{' '}
-                {user?.role === 'Supplier' ? (
-                  <Link to="/pricing" style={{ color: '#e94560' }}>Upgrade to Premium</Link>
-                ) : (
-                  <Link to="/login" style={{ color: '#e94560' }}>Login as Supplier</Link>
-                )}
-                {' '}to unlock.
+              <div className="alert alert-warning py-2 mb-0 small">
+                <Link to="/login" style={{ color: '#e94560' }}>Login as Supplier</Link> to contact this buyer.
               </div>
             )}
           </div>

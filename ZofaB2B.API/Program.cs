@@ -1,3 +1,4 @@
+using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -35,12 +36,25 @@ builder.Services.AddAuthorization();
 // Services
 builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddScoped<SubscriptionService>();
+builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<CloudinaryService>();
+builder.Services.AddHttpClient();
 
-// CORS — allow React frontend
+// Rate Limiting
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.AddInMemoryRateLimiting();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
+        policy.WithOrigins(
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "https://zofa.pk",
+            "https://www.zofa.pk")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
@@ -80,6 +94,7 @@ using (var scope = app.Services.CreateScope())
 
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseIpRateLimiting();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();

@@ -59,6 +59,7 @@ namespace ZofaB2B.API.Controllers
                 .Select(r => new RFQListDto
                 {
                     RFQId = r.RFQId,
+                    BuyerId = r.BuyerId,
                     Title = r.Title,
                     Quantity = r.Quantity,
                     Unit = r.Unit,
@@ -94,6 +95,7 @@ namespace ZofaB2B.API.Controllers
             var dto = new RFQDetailDto
             {
                 RFQId = rfq.RFQId,
+                BuyerId = rfq.BuyerId,
                 Title = rfq.Title,
                 Description = rfq.Description,
                 Quantity = rfq.Quantity,
@@ -150,6 +152,7 @@ namespace ZofaB2B.API.Controllers
                 .Select(r => new RFQListDto
                 {
                     RFQId = r.RFQId,
+                    BuyerId = r.BuyerId,
                     Title = r.Title,
                     Quantity = r.Quantity,
                     Unit = r.Unit,

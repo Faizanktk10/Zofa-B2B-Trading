@@ -12,11 +12,13 @@ export default function EditProfile() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     phone: '', city: '', province: '', companyName: '',
-    businessType: '', yearsInBusiness: 0, description: '', website: ''
+    businessType: '', yearsInBusiness: 0, description: '', mainProducts: '', website: ''
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [logoUploading, setLogoUploading] = useState(false);
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
@@ -30,10 +32,31 @@ export default function EditProfile() {
         businessType: d.businessType || '',
         yearsInBusiness: d.yearsInBusiness || 0,
         description: d.description || '',
+        mainProducts: d.mainProducts || '',
         website: d.website || ''
       });
+      if (d.logoUrl) setLogoPreview(d.logoUrl);
     }).finally(() => setLoading(false));
   }, [user, navigate]);
+
+  const handleLogoChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result;
+      setLogoPreview(base64);
+      setLogoUploading(true);
+      try {
+        await api.post('/upload/logo', { base64Data: base64 });
+      } catch {
+        setMsg('❌ Logo upload failed. Check Cloudinary config.');
+      } finally {
+        setLogoUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
@@ -62,14 +85,29 @@ export default function EditProfile() {
         <div className="col-lg-8">
           <div className="card border-0 shadow-sm p-4">
             <div className="d-flex align-items-center gap-3 mb-4">
-              <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
-                style={{ width: 56, height: 56, background: 'linear-gradient(135deg, #1a1a2e, #0f3460)', fontSize: '1.4rem' }}>
-                {user.fullName[0]}
+              <div className="position-relative">
+                {logoPreview ? (
+                  <img src={logoPreview} alt="logo" className="rounded-circle"
+                    style={{ width: 56, height: 56, objectFit: 'cover', border: '2px solid #e94560' }} />
+                ) : (
+                  <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white"
+                    style={{ width: 56, height: 56, background: 'linear-gradient(135deg, #1a1a2e, #0f3460)', fontSize: '1.4rem' }}>
+                    {user.fullName[0]}
+                  </div>
+                )}
+                {user.role === 'Supplier' && (
+                  <label className="position-absolute bottom-0 end-0 rounded-circle d-flex align-items-center justify-content-center"
+                    style={{ width: 20, height: 20, background: '#e94560', cursor: 'pointer' }}>
+                    <span style={{ color: '#fff', fontSize: '0.6rem' }}>✏</span>
+                    <input type="file" accept="image/*" className="d-none" onChange={handleLogoChange} />
+                  </label>
+                )}
               </div>
               <div>
                 <h5 className="fw-bold mb-0">{user.fullName}</h5>
                 <span className={`badge ${user.role === 'Buyer' ? 'bg-primary' : 'bg-success'}`}>{user.role}</span>
                 {user.plan === 'Premium' && <span className="badge bg-warning text-dark ms-1">⭐ Premium</span>}
+                {logoUploading && <span className="badge bg-secondary ms-1">Uploading...</span>}
               </div>
             </div>
 
@@ -118,9 +156,10 @@ export default function EditProfile() {
                         value={form.yearsInBusiness} onChange={set('yearsInBusiness')} />
                     </div>
                     <div className="col-12">
-                      <label className="form-label fw-semibold">Website</label>
-                      <input className="form-control" placeholder="https://yourwebsite.com"
-                        value={form.website} onChange={set('website')} />
+                      <label className="form-label fw-semibold">Main Products</label>
+                      <input className="form-control" placeholder="e.g. Cotton Yarn, Scrap Metal, Sugar (comma-separated)"
+                        value={form.mainProducts} onChange={set('mainProducts')} />
+                      <div className="form-text">Separate multiple products with commas</div>
                     </div>
                     <div className="col-12">
                       <label className="form-label fw-semibold">Company Description</label>

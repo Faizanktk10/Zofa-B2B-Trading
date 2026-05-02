@@ -16,6 +16,7 @@ namespace ZofaB2B.API.Data
         public DbSet<LeadUnlock> LeadUnlocks => Set<LeadUnlock>();
         public DbSet<Payment> Payments => Set<Payment>();
         public DbSet<SupplierProfile> SupplierProfiles => Set<SupplierProfile>();
+        public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

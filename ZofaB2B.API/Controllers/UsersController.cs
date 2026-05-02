@@ -28,7 +28,9 @@ namespace ZofaB2B.API.Controllers
         [HttpGet("me")]
         public async Task<IActionResult> GetMe()
         {
-            var user = await _db.Users.FindAsync(CurrentUserId);
+            var user = await _db.Users
+                .Include(u => u.SupplierProfile)
+                .FirstOrDefaultAsync(u => u.UserId == CurrentUserId);
             if (user == null) return NotFound();
 
             var plan = await _subService.GetActivePlanAsync(CurrentUserId);
@@ -37,7 +39,12 @@ namespace ZofaB2B.API.Controllers
             {
                 user.UserId, user.FullName, user.Email, user.Phone,
                 user.Role, user.City, user.Province, user.CompanyName,
-                user.IsVerified, Plan = plan
+                user.IsVerified, Plan = plan,
+                BusinessType = user.SupplierProfile?.BusinessType,
+                YearsInBusiness = user.SupplierProfile?.YearsInBusiness ?? 0,
+                Description = user.SupplierProfile?.Description,
+                MainProducts = user.SupplierProfile?.MainProducts,
+                Website = user.SupplierProfile?.Website
             });
         }
 
@@ -62,6 +69,7 @@ namespace ZofaB2B.API.Controllers
                     profile.BusinessType = dto.BusinessType ?? profile.BusinessType;
                     profile.YearsInBusiness = dto.YearsInBusiness > 0 ? dto.YearsInBusiness : profile.YearsInBusiness;
                     profile.Description = dto.Description ?? profile.Description;
+                    profile.MainProducts = dto.MainProducts ?? profile.MainProducts;
                     profile.Website = dto.Website ?? profile.Website;
                 }
             }
@@ -96,11 +104,13 @@ namespace ZofaB2B.API.Controllers
                     BusinessType = u.SupplierProfile != null ? u.SupplierProfile.BusinessType : null,
                     YearsInBusiness = u.SupplierProfile != null ? u.SupplierProfile.YearsInBusiness : 0,
                     Description = u.SupplierProfile != null ? u.SupplierProfile.Description : null,
+                    MainProducts = u.SupplierProfile != null ? u.SupplierProfile.MainProducts : null,
                     LogoUrl = u.SupplierProfile != null ? u.SupplierProfile.LogoUrl : null,
                     Website = u.SupplierProfile != null ? u.SupplierProfile.Website : null,
                     IsFeatured = u.SupplierProfile != null && u.SupplierProfile.IsFeatured,
                     Rating = u.SupplierProfile != null ? u.SupplierProfile.Rating : 0,
-                    IsPremium = u.Subscriptions.Any(s => s.IsActive && s.PlanType == "Premium" && s.EndDate > now)
+                    IsPremium = u.Subscriptions.Any(s => s.IsActive && s.PlanType == "Premium" && s.EndDate > now),
+                    IsVerified = u.IsVerified
                 })
                 .OrderByDescending(s => s.IsFeatured)
                 .ThenByDescending(s => s.IsPremium)
@@ -130,11 +140,13 @@ namespace ZofaB2B.API.Controllers
                 BusinessType = user.SupplierProfile?.BusinessType,
                 YearsInBusiness = user.SupplierProfile?.YearsInBusiness ?? 0,
                 Description = user.SupplierProfile?.Description,
+                MainProducts = user.SupplierProfile?.MainProducts,
                 LogoUrl = user.SupplierProfile?.LogoUrl,
                 Website = user.SupplierProfile?.Website,
                 IsFeatured = user.SupplierProfile?.IsFeatured ?? false,
                 Rating = user.SupplierProfile?.Rating ?? 0,
-                IsPremium = user.Subscriptions.Any(s => s.IsActive && s.PlanType == "Premium" && s.EndDate > now)
+                IsPremium = user.Subscriptions.Any(s => s.IsActive && s.PlanType == "Premium" && s.EndDate > now),
+                IsVerified = user.IsVerified
             });
         }
     }
