@@ -12,6 +12,13 @@ export default defineConfig({
       }
     }
   },
+  preview: {
+    port: 4173,
+    allowedHosts: [
+      'localhost',
+      '.up.railway.app',
+    ],
+  },
   build: {
     outDir: 'dist',
     sourcemap: false,
