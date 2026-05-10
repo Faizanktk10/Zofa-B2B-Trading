@@ -9,13 +9,11 @@
     using ZofaB2B.API.Services;
 
     var builder = WebApplication.CreateBuilder(args);
-
-   // Direct connection string bina kisi configuration file ke dependency ke
-var connectionString = "Host=db.txhucwgwklbkvrkyyjsh.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=#zofafaizan#123;SSL Mode=Require;Trust Server Certificate=true;";
+// Forced IPv4 Connection String
+var connectionString = "Host=db.txhucwgwklbkvrkyyjsh.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=#zofafaizan#123;SSL Mode=Require;Trust Server Certificate=true;Pooling=false;";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
-
     // 2. JWT Authentication
     var jwtKey = builder.Configuration["Jwt:Key"] ?? "YourFallbackSecretKeyForLocalOnly";
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
