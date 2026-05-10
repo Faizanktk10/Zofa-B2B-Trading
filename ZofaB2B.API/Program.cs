@@ -10,8 +10,8 @@ using ZofaB2B.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Supabase Connection (FIXED: Port 5432 + Simple Password)
-var connectionString = "Host=aws-0-us-west-2.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres;Password=ZofaTrading2026;SSL Mode=Require;Trust Server Certificate=true;Pooling=true;";
+// ✅ Supabase FINAL FIX (Correct Username + Clean String)
+var connectionString = "Host=aws-0-us-west-2.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.txhucwgwklbkvrkyyjsh;Password=ZofaTrading2026;SSL Mode=Require;Trust Server Certificate=true;";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -97,16 +97,13 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// ✅ Database Init (Safe Version)
+// ✅ Database Init
 using (var scope = app.Services.CreateScope())
 {
     try
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-        // Prefer migrations, fallback to EnsureCreated
         db.Database.Migrate();
-
         Console.WriteLine("Database migrated successfully!");
     }
     catch (Exception ex)
@@ -127,6 +124,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// ✅ Render Port Fix (VERY IMPORTANT)
+// ✅ Render Port Fix
 var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
 app.Run($"http://0.0.0.0:{port}");
