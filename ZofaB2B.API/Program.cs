@@ -9,8 +9,9 @@
     using ZofaB2B.API.Services;
 
     var builder = WebApplication.CreateBuilder(args);
-// Forced IPv4 Connection String
-var connectionString = "Host=db.txhucwgwklbkvrkyyjsh.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=#zofafaizan#123;SSL Mode=Require;Trust Server Certificate=true;Pooling=false;";
+// Pooler Transaction Mode String (IPv4 Compatible)
+// Note: Username mein project id (txhucwgwklbkvrkyyjsh) hona lazmi hai
+var connectionString = "Host=aws-0-us-west-2.pooler.supabase.com;Port=6543;Database=postgres;Username=postgres.txhucwgwklbkvrkyyjsh;Password=#zofafaizan#123;SSL Mode=Require;Trust Server Certificate=true;Pooling=true;";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
