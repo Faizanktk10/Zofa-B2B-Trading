@@ -10,8 +10,7 @@
 
     var builder = WebApplication.CreateBuilder(args);
 
-    // 1. Database Configuration (PostgreSQL for Supabase/Render)
-    // Direct Connection String (Bina configuration file ke)
+   // Direct connection string bina kisi configuration file ke dependency ke
 var connectionString = "Host=db.txhucwgwklbkvrkyyjsh.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=#zofafaizan#123;SSL Mode=Require;Trust Server Certificate=true;";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
