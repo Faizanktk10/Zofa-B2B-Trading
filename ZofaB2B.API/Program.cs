@@ -11,8 +11,11 @@
     var builder = WebApplication.CreateBuilder(args);
 
     // 1. Database Configuration (PostgreSQL for Supabase/Render)
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    // Direct Connection String (Bina configuration file ke)
+var connectionString = "Host=db.txhucwgwklbkvrkyyjsh.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=#zofafaizan#123;SSL Mode=Require;Trust Server Certificate=true;";
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(connectionString));
 
     // 2. JWT Authentication
     var jwtKey = builder.Configuration["Jwt:Key"] ?? "YourFallbackSecretKeyForLocalOnly";
