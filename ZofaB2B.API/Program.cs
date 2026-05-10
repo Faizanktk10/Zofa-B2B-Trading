@@ -10,46 +10,74 @@ using ZofaB2B.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Supabase FINAL FIX (Correct Username + Clean String)
-var connectionString = "Host=db.txhucwgwklbkvrkyyjsh.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=ZofaTrading2026;SSL Mode=Require;Trust Server Certificate=true;";
+// 🔥 IMPORTANT: Force IPv4 (fix Render + Supabase IPv6 issues)
+AppContext.SetSwitch("System.Net.DisableIPv6", true);
+
+// =======================
+// DATABASE CONNECTION
+// =======================
+
+// NOTE: Pooler + correct port + project ref username
+var connectionString =
+    "Host=db.txhucwgwklbkvrkyyjsh.supabase.co;" +
+    "Port=5432;" +
+    "Database=postgres;" +
+    "Username=postgres;" +
+    "Password=ZofaTrading2026;" +
+    "SSL Mode=Require;" +
+    "Trust Server Certificate=true;";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// ✅ JWT Authentication
+// =======================
+// JWT AUTH
+// =======================
+
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "YourFallbackSecretKeyForLocalOnly";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-        };
-    });
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+    };
+});
 
 builder.Services.AddAuthorization();
 
-// ✅ Services
+// =======================
+// DEPENDENCY INJECTION
+// =======================
+
 builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddScoped<SubscriptionService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<CloudinaryService>();
 builder.Services.AddHttpClient();
 
-// ✅ Rate Limiting
+// =======================
+// RATE LIMITING
+// =======================
+
 builder.Services.AddMemoryCache();
-builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.Configure<IpRateLimitOptions>(
+    builder.Configuration.GetSection("IpRateLimiting"));
+
 builder.Services.AddInMemoryRateLimiting();
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
-// ✅ CORS
+// =======================
+// CORS
+// =======================
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -57,26 +85,33 @@ builder.Services.AddCors(options =>
             "http://localhost:3000",
             "http://localhost:5173",
             "https://zofa.pk",
-            "https://www.zofa.pk")
-            .AllowAnyHeader()
-            .AllowAnyMethod());
+            "https://www.zofa.pk"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod());
 });
+
+// =======================
+// CONTROLLERS + SWAGGER
+// =======================
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// ✅ Swagger
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Zofa B2B Trading API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Zofa B2B Trading API",
+        Version = "v1"
+    });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Enter: Bearer {token}",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Type = SecuritySchemeType.ApiKey
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -97,7 +132,10 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// ✅ Database Init
+// =======================
+// DATABASE INIT
+// =======================
+
 using (var scope = app.Services.CreateScope())
 {
     try
@@ -112,11 +150,13 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// ✅ Middleware
+// =======================
+// MIDDLEWARE
+// =======================
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseIpRateLimiting();
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
@@ -124,6 +164,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// ✅ Render Port Fix
+// =======================
+// RENDER PORT
+// =======================
+
 var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
 app.Run($"http://0.0.0.0:{port}");
