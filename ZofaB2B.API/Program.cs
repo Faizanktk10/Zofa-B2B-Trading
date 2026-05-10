@@ -9,9 +9,14 @@
     using ZofaB2B.API.Services;
 
     var builder = WebApplication.CreateBuilder(args);
-// Pooler Transaction Mode String (IPv4 Compatible)
-// Note: Username mein project id (txhucwgwklbkvrkyyjsh) hona lazmi hai
-var connectionString = "Host=aws-0-us-west-2.pooler.supabase.com;Port=6543;Database=postgres;Username=postgres.txhucwgwklbkvrkyyjsh;Password=#zofafaizan#123;SSL Mode=Require;Trust Server Certificate=true;Pooling=true;";
+// Final Tested Connection String for Supabase Pooler
+var host = "aws-0-us-west-2.pooler.supabase.com";
+var port = 6543;
+var database = "postgres";
+var user = "postgres.txhucwgwklbkvrkyyjsh"; // Aapka correct username
+var pass = "#zofafaizan#123";
+
+var connectionString = $"Host={host};Port={port};Database={database};Username={user};Password={pass};SSL Mode=Require;Trust Server Certificate=true;Pooling=true;Timeout=300;";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -117,5 +122,5 @@ using (var scope = app.Services.CreateScope())
     app.MapControllers();
 
     // 9. Port Binding for Render (Critical Fix)
-    var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
-    app.Run($"http://0.0.0.0:{port}");
+  //  var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+ //   app.Run($"http://0.0.0.0:{port}");
