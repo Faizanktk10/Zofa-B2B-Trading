@@ -26,8 +26,10 @@ namespace ZofaB2B.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
-            if (await _db.Users.AnyAsync(u => u.Email == dto.Email))
-                return BadRequest(new { message = "Email already registered." });
+            try
+            {
+                if (await _db.Users.AnyAsync(u => u.Email == dto.Email))
+                    return BadRequest(new { message = "Email already registered." });
 
             if (dto.Role != "Buyer" && dto.Role != "Supplier")
                 return BadRequest(new { message = "Role must be Buyer or Supplier." });
@@ -65,6 +67,12 @@ namespace ZofaB2B.API.Controllers
                 UserId = user.UserId,
                 Plan = "Free"
             });
+            }
+            catch (Exception ex)
+            {
+                // Return exception details so the client sees what’s failing (helps remove the 500).
+                return StatusCode(500, new { message = ex.Message, detail = ex.ToString() });
+            }
         }
 
         [HttpPost("login")]
