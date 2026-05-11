@@ -185,6 +185,10 @@ namespace ZofaB2B.API.Controllers
                 .Include(r => r.Quotations)
                 .Where(r => r.CategoryId == id && r.Status == "Open");
 
+            // Guard against invalid pagination params that can crash LINQ providers (e.g. pageSize=0)
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 20;
+
             var total = await query.CountAsync();
             var items = await query
                 .OrderByDescending(r => r.IsFeatured).ThenByDescending(r => r.CreatedAt)

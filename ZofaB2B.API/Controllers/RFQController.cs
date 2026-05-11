@@ -40,6 +40,10 @@ namespace ZofaB2B.API.Controllers
                 .Where(r => r.Status == "Open")
                 .AsQueryable();
 
+            // Guard against invalid pagination params that can crash LINQ providers (e.g. pageSize=0)
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 20;
+
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(r => r.Title.Contains(search) || r.Description.Contains(search));
 
