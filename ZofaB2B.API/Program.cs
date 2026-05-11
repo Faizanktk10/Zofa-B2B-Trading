@@ -23,7 +23,7 @@ var connectionString =
     "Port=5432;" +
     "Database=postgres;" +
     "Username=postgres;" +
-    "Password=ZofaTrading2026;" +
+    "Password=Zofafaizan123;" +
     // hardcode pooling/ssl flags exactly as requested
     "Pooling=false;" +
     "SSL Mode=Require;" +
