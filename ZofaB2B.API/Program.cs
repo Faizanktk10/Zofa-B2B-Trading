@@ -25,7 +25,8 @@ var connectionString =
     "Username=postgres;" +
     "Password=ZofaTrading2026;" +
     "SSL Mode=Require;" +
-    "Trust Server Certificate=true;";
+    "Trust Server Certificate=true;" +
+    "Pooling=false;";
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -141,8 +142,10 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        db.Database.Migrate();
-        Console.WriteLine("Database migrated successfully!");
+        // NOTE: Render + Supabase + Npgsql can throw DivideByZeroException during migrations.
+        // Keep app booting even if migration fails.
+        // db.Database.Migrate();
+        Console.WriteLine("Skipping Database.Migrate() during startup (temporary to bypass Npgsql bug)." );
     }
     catch (Exception ex)
     {
