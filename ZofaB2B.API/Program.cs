@@ -147,6 +147,9 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         Console.WriteLine($"Database Error: {ex.Message}");
+        Console.WriteLine(ex.ToString());
+        // Rethrow in case we need the full stack trace in logs (Render)
+        // throw;
     }
 }
 
