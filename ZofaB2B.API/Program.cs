@@ -22,9 +22,9 @@ var connectionStringBuilder = new NpgsqlConnectionStringBuilder
 {
     // Port 5432 ki jagah 6543 use karein
     Host = "db.txhucwgwklbkvrkyyjsh.supabase.co", 
-    Port = 5432, 
+    Port = 6543, 
     Database = "postgres",
-    Username = "postgres.txhucwgwklbkvrkyyjsh", // Username thora change hoga (Project ID ke saath)
+    Username = "postgres.txhucwgwklbkvrkyyjsh",  // Username thora change hoga (Project ID ke saath)
     Password = "zofafaizan123",
     Pooling = false, // Pooler ke saath isay true rakh sakte hain
     SslMode = SslMode.Require,
@@ -187,3 +187,4 @@ app.MapControllers();
 
 var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
 app.Run($"http://0.0.0.0:{port}");
+
