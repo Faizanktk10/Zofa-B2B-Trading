@@ -20,13 +20,12 @@ AppContext.SetSwitch("System.Net.DisableIPv6", true);
 // NOTE: Pooler + correct port + project ref username
 var connectionStringBuilder = new NpgsqlConnectionStringBuilder
 {
-    // Port 5432 ki jagah 6543 use karein
-    Host = "db.txhucwgwklbkvrkyyjsh.supabase.co", 
-    Port = 6543, 
+    Host = "db.txhucwgwklbkvrkyyjsh.supabase.co",
+    Port = 6543,
     Database = "postgres",
-    Username = "postgres.txhucwgwklbkvrkyyjsh",  // Username thora change hoga (Project ID ke saath)
+    Username = "postgres.txhucwgwklbkvrkyyjsh",
     Password = "zofafaizan123",
-    Pooling = false, // Pooler ke saath isay true rakh sakte hain
+    Pooling = true,
     SslMode = SslMode.Require,
     TrustServerCertificate = true
 };
