@@ -34,42 +34,8 @@ if (string.IsNullOrWhiteSpace(connectionString))
         "Missing DB connection string. Set ConnectionStrings__DefaultConnection (Render) or ConnectionStrings:DefaultConnection (appsettings)." );
 }
 
-// Parse/validate connection string to surface SSL parsing issues early
-try
-{
-    var csb = new NpgsqlConnectionStringBuilder(connectionString);
-    // Avoid logging sensitive fields (password). Safe fields only.
-    Console.WriteLine($"Npgsql connection resolved: Host={csb.Host}; Port={csb.Port}; Database={csb.Database}; SslMode={csb.SslMode}; Pooling={csb.Pooling};");
-}
-catch (Exception csParseEx)
-{
-    Console.WriteLine($"Connection string parse failed: {csParseEx.Message}");
-    Console.WriteLine(csParseEx);
-    throw;
-}
-
-var csbForEf = new NpgsqlConnectionStringBuilder(connectionString)
-{
-    Pooling = true,
-    Timeout = 30,
-
-    // Ensure EF command timeouts are finite and sane.
-    // NOTE: NpgsqlConnectionStringBuilder doesn't have these exact properties in all versions,
-    // so we only set what the builder supports.
-};
-
-// Avoid Infinity/0 timeouts leaking in from the connection string.
-// (If these keys exist in your env var, Npgsql may parse them into problematic values.)
-foreach (var key in new[] { "Timeout", "CommandTimeout", "InternalHttpExecutionTimeout" })
-{
-    if (csbForEf.TryGetValue(key, out var _))
-    {
-        // no-op; builder will already normalize, but we keep guard logic centralized.
-    }
-}
-
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(csbForEf.ConnectionString));
+    options.UseNpgsql(connectionString));
 
 // =======================
 // JWT AUTH
