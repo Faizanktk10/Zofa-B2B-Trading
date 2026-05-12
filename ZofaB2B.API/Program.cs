@@ -8,7 +8,8 @@ using ZofaB2B.API.Data;
 using ZofaB2B.API.Helpers;
 using ZofaB2B.API.Services;
 using Npgsql;
-
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,20 @@ if (string.IsNullOrWhiteSpace(connectionString))
 {
     throw new InvalidOperationException(
         "Missing DB connection string. Set ConnectionStrings__DefaultConnection (Render) or ConnectionStrings:DefaultConnection (appsettings)." );
+}
+
+// Parse/validate connection string to surface SSL parsing issues early
+try
+{
+    var csb = new NpgsqlConnectionStringBuilder(connectionString);
+    // Avoid logging sensitive fields (password). Safe fields only.
+    Console.WriteLine($"Npgsql connection resolved: Host={csb.Host}; Port={csb.Port}; Database={csb.Database}; SslMode={csb.SslMode}; Pooling={csb.Pooling};");
+}
+catch (Exception csParseEx)
+{
+    Console.WriteLine($"Connection string parse failed: {csParseEx.Message}");
+    Console.WriteLine(csParseEx);
+    throw;
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
