@@ -48,8 +48,14 @@ catch (Exception csParseEx)
     throw;
 }
 
+var csbForEf = new NpgsqlConnectionStringBuilder(connectionString)
+{
+    Pooling = true,
+    Timeout = 15
+};
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(csbForEf.ConnectionString));
 
 // =======================
 // JWT AUTH
