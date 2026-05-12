@@ -68,9 +68,18 @@ namespace ZofaB2B.API.Controllers
                 Plan = "Free"
             });
             }
+            catch (Npgsql.NpgsqlException ex)
+            {
+                // Database / provider errors (connection/mapping/timeout/etc.)
+                return StatusCode(500, new { message = "Database error.", detail = ex.Message });
+            }
+            catch (DbUpdateException ex)
+            {
+                // EF insert/update failures
+                return StatusCode(500, new { message = "Could not save user.", detail = ex.Message });
+            }
             catch (Exception ex)
             {
-                // Return exception details so the client sees what’s failing (helps remove the 500).
                 return StatusCode(500, new { message = ex.Message, detail = ex.ToString() });
             }
         }

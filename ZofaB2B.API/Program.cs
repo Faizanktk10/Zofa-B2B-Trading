@@ -161,16 +161,27 @@ using (var scope = app.Services.CreateScope())
             Console.WriteLine(connectEx.ToString());
         }
 
-        // NOTE: Render + Supabase + Npgsql can throw DivideByZeroException during migrations.
-        // Keep app booting even if migration fails.
-        try
+        // NOTE:
+        // Running migrations automatically on Render can crash/poison the first DB operation (your stack shows DivideByZeroException inside Npgsql).
+        // Disable auto-migrate by default; run migrations in a controlled release step instead.
+        var runMigrations = builder.Configuration.GetValue<bool>("RunMigrations");
+        if (runMigrations)
         {
-            db.Database.Migrate();
-            Console.WriteLine("Database.Migrate() completed successfully.");
+            try
+            {
+                db.Database.Migrate();
+                Console.WriteLine("Database.Migrate() completed successfully.");
+            }
+            catch (Exception migrateEx)
+            {
+                Console.WriteLine($"Database.Migrate() failed: {migrateEx.Message}");
+                Console.WriteLine(migrateEx);
+                throw; // fail fast when migrations are explicitly requested
+            }
         }
-        catch (Exception migrateEx)
+        else
         {
-            Console.WriteLine($"Database.Migrate() failed (ignored): {migrateEx.Message}");
+            Console.WriteLine("Skipping Database.Migrate() (set RunMigrations=true to enable). ");
         }
     }
     catch (Exception ex)
