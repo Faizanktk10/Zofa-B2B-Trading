@@ -7,7 +7,7 @@ using System.Text;
 using ZofaB2B.API.Data;
 using ZofaB2B.API.Helpers;
 using ZofaB2B.API.Services;
-
+using Npgsql;
 var builder = WebApplication.CreateBuilder(args);
 
 // 🔥 IMPORTANT: Force IPv4 (fix Render + Supabase IPv6 issues)
@@ -18,19 +18,19 @@ AppContext.SetSwitch("System.Net.DisableIPv6", true);
 // =======================
 
 // NOTE: Pooler + correct port + project ref username
-var connectionString =
-    "Host=db.txhucwgwklbkvrkyyjsh.supabase.co;" +
-    "Port=5432;" +
-    "Database=postgres;" +
-    "Username=postgres;" +
-    "Password=Zofafaizan123;" +
-    // hardcode pooling/ssl flags exactly as requested
-    "Pooling=false;" +
-    "SSL Mode=Require;" +
-    "Trust Server Certificate=true;";
+var connectionStringBuilder = new NpgsqlConnectionStringBuilder
+{
+    Host = "db.txhucwgwklbkvrkyyjsh.supabase.co",
+    Port = 5432,
+    Database = "postgres",
+    Username = "postgres",
+    Password = "zofafaizan123",
+    Pooling = false,
+    SslMode = SslMode.Require,
+    TrustServerCertificate = true // Ye line lazmi add karein
+};
 
-Console.WriteLine("Connecting with: " + connectionString.Replace("Password=ZofaTrading2026", "Password=***"));
-
+var connectionString = connectionStringBuilder.ConnectionString;
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
