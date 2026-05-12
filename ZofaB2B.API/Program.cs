@@ -21,13 +21,15 @@ AppContext.SetSwitch("System.Net.DisableIPv6", true);
 var connectionStringBuilder = new NpgsqlConnectionStringBuilder
 {
     Host = "db.txhucwgwklbkvrkyyjsh.supabase.co",
-    Port = 5432,
+    Port = 6543,
     Database = "postgres",
-    Username = "postgres",
+    Username = "postgres.txhucwgwklbkvrkyyjsh",
     Password = "zofafaizan123",
-    Pooling = false,
+    Pooling = true,
     SslMode = SslMode.Require,
-    TrustServerCertificate = true
+    TrustServerCertificate = true,
+    Timeout = 15,
+    CommandTimeout = 30
 };
 
 var connectionString = connectionStringBuilder.ConnectionString;
