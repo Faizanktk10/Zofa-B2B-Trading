@@ -8,7 +8,11 @@ using ZofaB2B.API.Data;
 using ZofaB2B.API.Helpers;
 using ZofaB2B.API.Services;
 using Npgsql;
+
 var builder = WebApplication.CreateBuilder(args);
+
+
+
 
 // 🔥 IMPORTANT: Force IPv4 (fix Render + Supabase IPv6 issues)
 AppContext.SetSwitch("System.Net.DisableIPv6", true);
@@ -17,26 +21,24 @@ AppContext.SetSwitch("System.Net.DisableIPv6", true);
 // DATABASE CONNECTION
 // =======================
 
-// NOTE: Pooler + correct port + project ref username
-var connectionStringBuilder = new NpgsqlConnectionStringBuilder
-{
-    Host = "db.txhucwgwklbkvrkyyjsh.supabase.co",
-    Port = 5432,
-    Database = "postgres",
-    Username = "postgres",
-    Password = "zofafaizan123",
-    Pooling = false,
-    SslMode = SslMode.Require,
-    TrustServerCertificate = true
-};
+// Use Render env var (recommended) instead of hardcoding secrets/hostnames
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? builder.Configuration["ConnectionStrings__DefaultConnection"]
+    ?? "";
 
-var connectionString = connectionStringBuilder.ConnectionString;
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Missing DB connection string. Set ConnectionStrings__DefaultConnection (Render) or ConnectionStrings:DefaultConnection (appsettings)." );
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 // =======================
 // JWT AUTH
 // =======================
+
 
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "YourFallbackSecretKeyForLocalOnly";
 
@@ -145,6 +147,20 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        // Startup connectivity test (helps diagnose 500s during first request)
+        try
+        {
+            Console.WriteLine("Checking database connectivity...");
+            await db.Database.CanConnectAsync();
+            Console.WriteLine("Database connectivity OK.");
+        }
+        catch (Exception connectEx)
+        {
+            Console.WriteLine($"Database connectivity test failed: {connectEx.Message}");
+            Console.WriteLine(connectEx.ToString());
+        }
+
         // NOTE: Render + Supabase + Npgsql can throw DivideByZeroException during migrations.
         // Keep app booting even if migration fails.
         try
@@ -161,10 +177,9 @@ using (var scope = app.Services.CreateScope())
     {
         Console.WriteLine($"Database Error: {ex.Message}");
         Console.WriteLine(ex.ToString());
-        // Rethrow in case we need the full stack trace in logs (Render)
-        // throw;
     }
 }
+
 
 // =======================
 // MIDDLEWARE
