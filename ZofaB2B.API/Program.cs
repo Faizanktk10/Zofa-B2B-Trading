@@ -24,7 +24,12 @@ AppContext.SetSwitch("System.Net.DisableIPv6", true);
 
 // Use Render env var (recommended) instead of hardcoding secrets/hostnames
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")!));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
+    npgsqlOptions =>
+    {
+        npgsqlOptions.CommandTimeout(60);
+        npgsqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+    }));
 
 
 
