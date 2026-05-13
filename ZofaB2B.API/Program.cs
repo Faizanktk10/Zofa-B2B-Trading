@@ -23,48 +23,10 @@ AppContext.SetSwitch("System.Net.DisableIPv6", true);
 // =======================
 
 // Use Render env var (recommended) instead of hardcoding secrets/hostnames
-var rawConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? builder.Configuration["ConnectionStrings__DefaultConnection"]
-    ?? builder.Configuration["DefaultConnection"]
-    ?? string.Empty;
-
-if (string.IsNullOrWhiteSpace(rawConnectionString))
-{
-    throw new InvalidOperationException(
-        "Missing DB connection string. Set ConnectionStrings__DefaultConnection (Render), ConnectionStrings:DefaultConnection (appsettings), or DefaultConnection.");
-}
-
-var connectionString = EnsureTimeouts(rawConnectionString);
-
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")!));
 
-static string EnsureTimeouts(string connectionString)
-{
-    var normalized = connectionString.Trim();
-    var hasCommandTimeout = normalized.Contains("Command Timeout", StringComparison.OrdinalIgnoreCase);
-    var hasInternalTimeout = normalized.Contains("Internal Command Timeout", StringComparison.OrdinalIgnoreCase);
 
-    if (!hasCommandTimeout || !hasInternalTimeout)
-    {
-        if (!normalized.EndsWith(";"))
-        {
-            normalized += ";";
-        }
-
-        if (!hasCommandTimeout)
-        {
-            normalized += "Command Timeout=30;";
-        }
-
-        if (!hasInternalTimeout)
-        {
-            normalized += "Internal Command Timeout=30;";
-        }
-    }
-
-    return normalized;
-}
 
 // =======================
 // JWT AUTH
