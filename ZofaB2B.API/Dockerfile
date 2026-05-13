@@ -10,7 +10,8 @@ WORKDIR /app
 
 COPY --from=build /app/out .
 
-ENV ASPNETCORE_URLS=http://0.0.0.0:10000
-EXPOSE 10000
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+
 
 ENTRYPOINT ["dotnet", "ZofaB2B.API.dll"]

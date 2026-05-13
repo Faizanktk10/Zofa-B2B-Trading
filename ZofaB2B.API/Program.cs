@@ -22,9 +22,9 @@ AppContext.SetSwitch("System.Net.DisableIPv6", true);
 // DATABASE CONNECTION
 // =======================
 
-// Use Render env var (recommended) instead of hardcoding secrets/hostnames
+// Use environment variable ConnectionStrings__DefaultConnection (Azure-friendly)
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")!,
     npgsqlOptions =>
     {
         npgsqlOptions.CommandTimeout(60);
@@ -134,6 +134,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 // =======================
@@ -204,10 +206,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// =======================
-// RENDER PORT
-// =======================
+app.MapHealthChecks("/health");
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
-app.Run($"http://0.0.0.0:{port}");
+app.Run();
 

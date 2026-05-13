@@ -1,7 +1,14 @@
-- [ ] Update Program.cs to read connection string from Render env var `ConnectionStrings__DefaultConnection` instead of hardcoding
-- [ ] Add startup DB connectivity test + better logging around DB init
-- [ ] Keep IPv6-disable switch
-- [x] Rebuild locally succeeded
-- [ ] Re-deploy to Render and test POST /api/auth/register (watch logs for connectivity test + exact Npgsql error)
-
+- [ ] Gather relevant file contents (Program.cs, Dockerfile)
+- [ ] Review Program.cs current AddDbContext, Swagger, health checks, port binding
+- [ ] Plan changes for Azure-friendly deployment
+- [ ] Update Program.cs:
+  - [ ] Use ConnectionStrings__DefaultConnection environment variable via builder.Configuration
+  - [ ] Keep Npgsql v6 + CommandTimeout(60) + EnableRetryOnFailure(5, 10s, null)
+  - [ ] Add Health Checks and map endpoint at /health
+  - [ ] Ensure Swagger is enabled in Production (already outside dev, verify)
+  - [ ] Bind to Azure port 8080 (avoid PORT override issues)
+- [ ] Update Dockerfile:
+  - [ ] Set ASPNETCORE_URLS=http://+:8080
+  - [ ] EXPOSE 8080
+- [ ] Build/test (dotnet build)
 
