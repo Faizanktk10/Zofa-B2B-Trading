@@ -211,6 +211,8 @@ app.MapControllers();
 
 app.MapHealthChecks("/health");
 
+// Port-agnostic: do not attempt to bind/modify URLs in code.
+// Host/platform (IIS reverse proxy / container mapping) controls the listen address.
 app.Run();
 
 //faizan
