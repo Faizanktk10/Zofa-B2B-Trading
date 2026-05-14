@@ -17,9 +17,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_599E4A8FCBDB4843A084951BC61745C1 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_0B884FC3509C4277A5FB40F0DE22CBD2 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_95FD6674AD12413082C0C7D6D39D8AF5 }}
 
 
       - name: Build and push Docker image to Azure Container Registry
