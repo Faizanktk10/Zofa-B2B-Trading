@@ -12,8 +12,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
+// 🔥 IMPORTANT: Configure URLs at builder stage (before Build())
+// This prevents "Addresses IsReadOnly" error when app tries to listen later
+builder.WebHost.ConfigureKestrel(options =>
+{
+    // Listen on all interfaces on port from environment or default
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+    options.ListenAnyIP(int.Parse(port));
+});
 
 // 🔥 IMPORTANT: Force IPv4 (fix Render + Supabase IPv6 issues)
 AppContext.SetSwitch("System.Net.DisableIPv6", true);

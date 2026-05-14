@@ -10,7 +10,10 @@ WORKDIR /app
 
 COPY --from=build /app/out .
 
+# Set environment variables
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV PORT=8080
 
-
+EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "ZofaB2B.API.dll"]
