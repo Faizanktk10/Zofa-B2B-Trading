@@ -28,8 +28,8 @@ jobs:
       - name: Build and push Docker image to Azure Container Registry
         uses: azure/docker-login@v2
         with:
-          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
-          username: ${{ secrets.ACR_USERNAME }}
+          login-server: zofab2bapi.azurecr.io
+          username: zofab2bapi
           password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Set image tags
@@ -39,12 +39,12 @@ jobs:
 
       - name: Build and push
         run: |
-          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/${{ secrets.ACR_REPOSITORY }}:${{ steps.vars.outputs.sha }} -f ZofaB2B.API/Dockerfile .
-          docker push ${{ secrets.ACR_LOGIN_SERVER }}/${{ secrets.ACR_REPOSITORY }}:${{ steps.vars.outputs.sha }}
+          docker build -t zofab2bapi.azurecr.io/zofa-api:${{ steps.vars.outputs.sha }} -f ZofaB2B.API/Dockerfile .
+          docker push zofab2bapi.azurecr.io/zofa-api:${{ steps.vars.outputs.sha }}
 
       - name: Deploy to Azure App Service (container)
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-          images: ${{ secrets.ACR_LOGIN_SERVER }}/${{ secrets.ACR_REPOSITORY }}:${{ steps.vars.outputs.sha }}
+          images: zofab2bapi.azurecr.io/zofa-api:${{ steps.vars.outputs.sha }}
 
