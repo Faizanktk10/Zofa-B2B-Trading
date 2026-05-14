@@ -10,8 +10,9 @@ WORKDIR /app
 
 COPY --from=build /app/out .
 
-# Set environment variables
+# Set environment variables - Port must be handled by Kestrel configuration
 ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_URLS=
 ENV PORT=8080
 
 EXPOSE 8080

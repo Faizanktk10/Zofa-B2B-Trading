@@ -12,14 +12,33 @@ using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔥 IMPORTANT: Configure URLs at builder stage (before Build())
-// This prevents "Addresses IsReadOnly" error when app tries to listen later
-builder.WebHost.ConfigureKestrel(options =>
-{
-    // Listen on all interfaces on port from environment or default
-    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-    options.ListenAnyIP(int.Parse(port));
-});
+// 🔥 CRITICAL: Configure Kestrel at builder stage to prevent "Addresses IsReadOnly" error
+// Must be done BEFORE .Build() is called
+builder.WebHost.UseKestrel()
+    .ConfigureKestrel(options =>
+    {
+        // Determine port: env var > appsettings > default 8080
+        var portStr = Environment.GetEnvironmentVariable("PORT") 
+                   ?? builder.Configuration["Kestrel:Endpoints:Http:Url"]?.Split(':').Last() 
+                   ?? "8080";
+        
+        if (int.TryParse(portStr, out int port))
+        {
+            options.ListenAnyIP(port);
+            Console.WriteLine($"📡 Kestrel configured to listen on port {port}");
+        }
+        else
+        {
+            // Fallback if parsing fails
+            options.ListenAnyIP(8080);
+            Console.WriteLine($"⚠️ Failed to parse port '{portStr}', using default 8080");
+        }
+    })
+    .ConfigureAppConfiguration((ctx, config) =>
+    {
+        // Explicitly suppress ASPNETCORE_URLS to avoid conflicts
+        Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "");
+    });
 
 // 🔥 IMPORTANT: Force IPv4 (fix Render + Supabase IPv6 issues)
 AppContext.SetSwitch("System.Net.DisableIPv6", true);
