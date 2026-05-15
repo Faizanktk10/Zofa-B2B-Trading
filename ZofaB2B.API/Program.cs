@@ -20,32 +20,21 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 🔥 CRITICAL: Configure Kestrel at builder stage to prevent "Addresses IsReadOnly" error
 // Must be done BEFORE .Build() is called
-builder.WebHost.UseSetting(WebHostDefaults.ServerUrlsKey, "")
-    .UseKestrel()
-    .ConfigureKestrel(options =>
-    {
-        // Determine port: env var > appsettings > default 8080
-        var portStr = Environment.GetEnvironmentVariable("PORT") 
-                   ?? builder.Configuration["Kestrel:Endpoints:Http:Url"]?.Split(':').Last() 
-                   ?? "8080";
-        
-        if (int.TryParse(portStr, out int port))
-        {
-            options.ListenAnyIP(port);
-            Console.WriteLine($"📡 Kestrel configured to listen on port {port}");
-        }
-        else
-        {
-            // Fallback if parsing fails
-            options.ListenAnyIP(8080);
-            Console.WriteLine($"⚠️ Failed to parse port '{portStr}', using default 8080");
-        }
-    })
-    .ConfigureAppConfiguration((ctx, config) =>
-    {
-        // Explicitly suppress ASPNETCORE_URLS to avoid conflicts
-        Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "");
-    });
+// Bind Kestrel explicitly to the Render-provided port (PORT environment variable)
+var portStr = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+int port;
+if (!int.TryParse(portStr, out port))
+{
+    port = 8080;
+    Console.WriteLine($"⚠️ Invalid PORT='{portStr}', falling back to {port}");
+}
+
+builder.WebHost.UseKestrel(options =>
+{
+    options.ListenAnyIP(port);
+    Console.WriteLine($"📡 Kestrel listening on port {port}");
+});
+
 
 // 🔥 IMPORTANT: Force IPv4 (fix Render + Supabase IPv6 issues)
 AppContext.SetSwitch("System.Net.DisableIPv6", true);
@@ -195,7 +184,9 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddHealthChecks();
 
-var enableSwaggerInProd = builder.Configuration.GetValue<bool>("EnableSwaggerInProd");
+// Default to true so /swagger is reachable in Production while troubleshooting.
+var enableSwaggerInProd = builder.Configuration.GetValue<bool?>("EnableSwaggerInProd") ?? true;
+
 
 var app = builder.Build();
 
@@ -262,6 +253,7 @@ if (app.Environment.IsDevelopment() || enableSwaggerInProd)
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 
 app.UseCors("AllowFrontend");
 
