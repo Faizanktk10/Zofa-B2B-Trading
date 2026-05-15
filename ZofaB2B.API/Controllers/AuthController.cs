@@ -28,45 +28,54 @@ namespace ZofaB2B.API.Controllers
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(dto.Email))
+                    return BadRequest(new { message = "Email is required." });
+
                 if (await _db.Users.AnyAsync(u => u.Email == dto.Email))
                     return BadRequest(new { message = "Email already registered." });
 
-            if (dto.Role != "Buyer" && dto.Role != "Supplier")
-                return BadRequest(new { message = "Role must be Buyer or Supplier." });
+                if (dto.Role != "Buyer" && dto.Role != "Supplier")
+                    return BadRequest(new { message = "Role must be Buyer or Supplier." });
 
-            var user = new User
-            {
-                FullName = dto.FullName,
-                Email = dto.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Phone = dto.Phone,
-                Role = dto.Role,
-                City = dto.City,
-                Province = dto.Province,
-                CompanyName = dto.CompanyName
-            };
+                var user = new User
+                {
+                    FullName = dto.FullName,
+                    Email = dto.Email,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                    Phone = dto.Phone,
+                    Role = dto.Role,
+                    City = dto.City,
+                    Province = dto.Province,
+                    CompanyName = dto.CompanyName
+                };
 
-            _db.Users.Add(user);
-            await _db.SaveChangesAsync();
-
-            if (user.Role == "Supplier")
-            {
-                _db.SupplierProfiles.Add(new SupplierProfile { UserId = user.UserId });
+                _db.Users.Add(user);
                 await _db.SaveChangesAsync();
+
+                if (user.Role == "Supplier")
+                {
+                    _db.SupplierProfiles.Add(new SupplierProfile { UserId = user.UserId });
+                    await _db.SaveChangesAsync();
+                }
+
+                // Send welcome email (fire and forget)
+                _ = _email.SendWelcomeAsync(user.Email, user.FullName, user.Role);
+
+                var token = _jwt.GenerateToken(user, "Free");
+                return Ok(new AuthResponseDto
+                {
+                    Token = token,
+                    Role = user.Role,
+                    FullName = user.FullName,
+                    UserId = user.UserId,
+                    Plan = "Free"
+                });
             }
-
-            // Send welcome email (fire and forget)
-            _ = _email.SendWelcomeAsync(user.Email, user.FullName, user.Role);
-
-            var token = _jwt.GenerateToken(user, "Free");
-            return Ok(new AuthResponseDto
+            catch (DivideByZeroException ex)
             {
-                Token = token,
-                Role = user.Role,
-                FullName = user.FullName,
-                UserId = user.UserId,
-                Plan = "Free"
-            });
+                // This is coming from Npgsql internals in your logs.
+                // Return a clear message so you can correlate to connection issues.
+                return StatusCode(500, new { message = "Database provider error.", detail = ex.ToString() });
             }
             catch (Npgsql.NpgsqlException ex)
             {
@@ -83,6 +92,7 @@ namespace ZofaB2B.API.Controllers
                 return StatusCode(500, new { message = ex.Message, detail = ex.ToString() });
             }
         }
+
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
