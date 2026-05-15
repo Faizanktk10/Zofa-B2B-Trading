@@ -45,12 +45,7 @@ AppContext.SetSwitch("System.Net.DisableIPv6", true);
 
 // Use environment variable ConnectionStrings__DefaultConnection (Azure-friendly)
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")!,
-    npgsqlOptions =>
-    {
-        npgsqlOptions.CommandTimeout(60);
-        npgsqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
-    }));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")!));
 
 
 
