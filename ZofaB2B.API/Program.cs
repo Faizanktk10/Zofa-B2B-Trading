@@ -1,14 +1,18 @@
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.IO;
 using System.Text;
 using ZofaB2B.API.Data;
 using ZofaB2B.API.Helpers;
 using ZofaB2B.API.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+
+Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "");
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -119,6 +123,27 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader()
         .AllowAnyMethod());
 });
+
+var dataProtectionKeyPath = builder.Configuration["DataProtection:KeyPath"]
+    ?? Environment.GetEnvironmentVariable("DATAPROTECTION_KEY_PATH")
+    ?? Path.Combine(AppContext.BaseDirectory, "DataProtection-Keys");
+
+var dataProtectionBuilder = builder.Services.AddDataProtection()
+    .SetApplicationName("ZofaB2B.API")
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeyPath));
+
+var dataProtectionCertificate = builder.Configuration["DataProtection:CertificateThumbprint"]
+    ?? Environment.GetEnvironmentVariable("DATAPROTECTION_CERT_THUMBPRINT");
+
+if (!string.IsNullOrWhiteSpace(dataProtectionCertificate))
+{
+    dataProtectionBuilder.ProtectKeysWithCertificate(dataProtectionCertificate);
+    Console.WriteLine($"🔐 DataProtection keys will be encrypted with certificate thumbprint {dataProtectionCertificate}.");
+}
+else
+{
+    Console.WriteLine($"ℹ️ DataProtection keys will be persisted to {dataProtectionKeyPath}.");
+}
 
 // =======================
 // CONTROLLERS + SWAGGER
