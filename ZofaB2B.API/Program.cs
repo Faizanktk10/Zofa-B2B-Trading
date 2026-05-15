@@ -1,10 +1,12 @@
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using ZofaB2B.API.Data;
 using ZofaB2B.API.Helpers;
@@ -18,7 +20,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 🔥 CRITICAL: Configure Kestrel at builder stage to prevent "Addresses IsReadOnly" error
 // Must be done BEFORE .Build() is called
-builder.WebHost.UseKestrel()
+builder.WebHost.UseSetting(WebHostDefaults.ServerUrlsKey, "")
+    .UseKestrel()
     .ConfigureKestrel(options =>
     {
         // Determine port: env var > appsettings > default 8080
@@ -124,9 +127,15 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod());
 });
 
+var defaultDataProtectionPath = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+    ? "/data/DataProtection-Keys"
+    : Path.Combine(AppContext.BaseDirectory, "DataProtection-Keys");
+
 var dataProtectionKeyPath = builder.Configuration["DataProtection:KeyPath"]
     ?? Environment.GetEnvironmentVariable("DATAPROTECTION_KEY_PATH")
-    ?? Path.Combine(AppContext.BaseDirectory, "DataProtection-Keys");
+    ?? defaultDataProtectionPath;
+
+Directory.CreateDirectory(dataProtectionKeyPath);
 
 var dataProtectionBuilder = builder.Services.AddDataProtection()
     .SetApplicationName("ZofaB2B.API")
@@ -185,6 +194,8 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddHealthChecks();
+
+var enableSwaggerInProd = builder.Configuration.GetValue<bool>("EnableSwaggerInProd");
 
 var app = builder.Build();
 
@@ -246,7 +257,7 @@ using (var scope = app.Services.CreateScope())
 // MIDDLEWARE
 // =======================
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || enableSwaggerInProd)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
