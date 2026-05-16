@@ -20,12 +20,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 🔥 CRITICAL: Configure Kestrel at builder stage to prevent "Addresses IsReadOnly" error
 // Must be done BEFORE .Build() is called
-// Bind Kestrel explicitly to the Render-provided port (PORT environment variable)
-var portStr = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-int port;
-if (!int.TryParse(portStr, out port))
+// Bind Kestrel explicitly to the platform-provided port.
+// Render may inject PORT; also we fall back to 10000 to match your logs.
+var portStr = Environment.GetEnvironmentVariable("PORT")
+              ?? Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORT")
+              ?? "10000";
+
+if (!int.TryParse(portStr, out var port))
 {
-    port = 8080;
+    port = 10000;
     Console.WriteLine($"⚠️ Invalid PORT='{portStr}', falling back to {port}");
 }
 
