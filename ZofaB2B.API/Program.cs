@@ -15,7 +15,8 @@ using ZofaB2B.API.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
-Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "");
+// NOTE: Do NOT clear ASPNETCORE_URLS - Azure and other platforms use this to set the URL
+// Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "");
 
 var builder = WebApplication.CreateBuilder(args);
 
