@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { StatsSkeleton, TableSkeleton } from '../../components/PageSkeleton';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -20,8 +21,8 @@ export default function AdminDashboard() {
       api.get('/admin/users')
     ]).then(([d, p, u]) => {
       setStats(d.data);
-      setPayments(p.data);
-      setUsers(u.data);
+      setPayments(p.data.items ?? p.data);
+      setUsers(u.data.items ?? u.data);
     }).finally(() => setLoading(false));
   }, [user, navigate]);
 
@@ -39,7 +40,18 @@ export default function AdminDashboard() {
     await api.patch(`/admin/users/${id}/ban`, isActive, { headers: { 'Content-Type': 'application/json' } });
     setUsers(users.map(u => u.userId === id ? { ...u, isActive: !isActive } : u));
   };
-  if (loading) return <div className="text-center py-5"><div className="spinner-border" style={{ color: '#e94560' }} /></div>;
+  if (loading) {
+    return (
+      <div className="container-fluid py-4 px-4">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h4 className="fw-bold mb-0">⚙️ Admin Panel</h4>
+          <span className="badge bg-danger">Admin</span>
+        </div>
+        <StatsSkeleton count={9} />
+        <TableSkeleton rows={5} cols={8} />
+      </div>
+    );
+  }
 
   return (
     <div className="container-fluid py-4 px-4">

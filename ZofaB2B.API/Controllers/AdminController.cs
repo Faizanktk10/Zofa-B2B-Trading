@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ZofaB2B.API.Data;
@@ -9,6 +10,7 @@ namespace ZofaB2B.API.Controllers
 {
     [ApiController]
     [Route("api/admin")]
+    [EnableCors("AllowFrontend")]
     [Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
     {
@@ -42,36 +44,54 @@ namespace ZofaB2B.API.Controllers
 
         // GET /api/admin/stats — public stats for pricing page
         [AllowAnonymous]
+        [ResponseCache(Duration = 120, Location = ResponseCacheLocation.Any)]
         [HttpGet("stats")]
         public async Task<IActionResult> PublicStats()
         {
-            var now = DateTime.UtcNow;
+            var userCounts = await _db.Users
+                .AsNoTracking()
+                .Where(u => u.Role == "Buyer" || u.Role == "Supplier")
+                .GroupBy(u => u.Role)
+                .Select(g => new { Role = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            var totalRFQs = await _db.RFQs.AsNoTracking().CountAsync();
+            var totalQuotations = await _db.Quotations.AsNoTracking().CountAsync();
+
             return Ok(new
             {
-                TotalBuyers = await _db.Users.CountAsync(u => u.Role == "Buyer"),
-                TotalSuppliers = await _db.Users.CountAsync(u => u.Role == "Supplier"),
-                TotalRFQs = await _db.RFQs.CountAsync(),
-                TotalQuotations = await _db.Quotations.CountAsync()
+                TotalBuyers = userCounts.FirstOrDefault(x => x.Role == "Buyer")?.Count ?? 0,
+                TotalSuppliers = userCounts.FirstOrDefault(x => x.Role == "Supplier")?.Count ?? 0,
+                TotalRFQs = totalRFQs,
+                TotalQuotations = totalQuotations
             });
         }
 
         // GET /api/admin/users
         [HttpGet("users")]
-        public async Task<IActionResult> GetUsers([FromQuery] string? role, [FromQuery] string? search)
+        public async Task<IActionResult> GetUsers([FromQuery] string? role, [FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 50;
+
             var query = _db.Users.AsQueryable();
             if (!string.IsNullOrWhiteSpace(role)) query = query.Where(u => u.Role == role);
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(u => u.FullName.Contains(search) || u.Email.Contains(search));
 
-            var users = await query.Select(u => new
-            {
-                u.UserId, u.FullName, u.Email, u.Role, u.Phone,
-                u.CompanyName, u.City, u.IsVerified, u.IsActive, u.CreatedAt,
-                u.IsPremium, u.PlanType, u.SubscriptionExpiry
-            }).ToListAsync();
+            var total = await query.CountAsync();
+            var users = await query
+                .OrderByDescending(u => u.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(u => new
+                {
+                    u.UserId, u.FullName, u.Email, u.Role, u.Phone,
+                    u.CompanyName, u.City, u.IsVerified, u.IsActive, u.CreatedAt,
+                    u.IsPremium, u.PlanType, u.SubscriptionExpiry
+                }).ToListAsync();
 
-            return Ok(users);
+            return Ok(new { total, page, pageSize, items = users });
         }
 
         // PATCH /api/admin/users/{id}/ban
@@ -98,12 +118,18 @@ namespace ZofaB2B.API.Controllers
 
         // GET /api/admin/rfqs
         [HttpGet("rfqs")]
-        public async Task<IActionResult> GetRFQs([FromQuery] string? status)
+        public async Task<IActionResult> GetRFQs([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 50;
+
             var query = _db.RFQs.Include(r => r.Buyer).Include(r => r.Category).AsQueryable();
             if (!string.IsNullOrWhiteSpace(status)) query = query.Where(r => r.Status == status);
 
+            var total = await query.CountAsync();
             var rfqs = await query.OrderByDescending(r => r.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(r => new
                 {
                     r.RFQId, r.Title, r.Status, r.IsFeatured,
@@ -113,7 +139,7 @@ namespace ZofaB2B.API.Controllers
                     BuyerEmail = r.Buyer.Email
                 }).ToListAsync();
 
-            return Ok(rfqs);
+            return Ok(new { total, page, pageSize, items = rfqs });
         }
 
         // PATCH /api/admin/rfqs/{id}/feature
@@ -129,12 +155,18 @@ namespace ZofaB2B.API.Controllers
 
         // GET /api/admin/payments
         [HttpGet("payments")]
-        public async Task<IActionResult> GetPayments([FromQuery] string? status)
+        public async Task<IActionResult> GetPayments([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 50;
+
             var query = _db.Payments.Include(p => p.User).AsQueryable();
             if (!string.IsNullOrWhiteSpace(status)) query = query.Where(p => p.Status == status);
 
+            var total = await query.CountAsync();
             var payments = await query.OrderByDescending(p => p.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(p => new
                 {
                     p.PaymentId, p.Type, p.Amount, p.Method,
@@ -145,7 +177,7 @@ namespace ZofaB2B.API.Controllers
                     p.UserId
                 }).ToListAsync();
 
-            return Ok(payments);
+            return Ok(new { total, page, pageSize, items = payments });
         }
 
         // PATCH /api/admin/payments/{id}/confirm?planType=Premium

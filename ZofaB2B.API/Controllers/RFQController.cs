@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -10,7 +11,9 @@ using ZofaB2B.API.Services;
 namespace ZofaB2B.API.Controllers
 {
     [ApiController]
+    [IgnoreAntiforgeryToken]
     [Route("api/rfqs")]
+    [EnableCors("AllowFrontend")]
     public class RFQController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -26,55 +29,59 @@ namespace ZofaB2B.API.Controllers
 
         // GET /api/rfqs — public listing with search + filter
         [HttpGet]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any, VaryByQueryKeys = new[] { "search", "categoryId", "city", "page", "pageSize" })]
         public async Task<IActionResult> GetAll(
             [FromQuery] string? search,
             [FromQuery] int? categoryId,
             [FromQuery] string? city,
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20)
+            [FromQuery] int pageSize = 10)
         {
-            var query = _db.RFQs
-                .Include(r => r.Category)
-                .Include(r => r.Buyer)
-                .Include(r => r.Quotations)
-                .Where(r => r.Status == "Open")
-                .AsQueryable();
-
-            // Guard against invalid pagination params that can crash LINQ providers (e.g. pageSize=0)
             if (page < 1) page = 1;
-            if (pageSize < 1) pageSize = 20;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 50) pageSize = 50;
+
+            var filtered = _db.RFQs
+                .AsNoTracking()
+                .Where(r => r.Status == "Open");
 
             if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(r => r.Title.Contains(search) || r.Description.Contains(search));
+                filtered = filtered.Where(r => r.Title.Contains(search) || r.Description.Contains(search));
 
             if (categoryId.HasValue)
-                query = query.Where(r => r.CategoryId == categoryId);
+                filtered = filtered.Where(r => r.CategoryId == categoryId);
 
             if (!string.IsNullOrWhiteSpace(city))
-                query = query.Where(r => r.DeliveryCity != null && r.DeliveryCity.Contains(city));
+                filtered = filtered.Where(r => r.DeliveryCity != null && r.DeliveryCity.Contains(city));
 
-            // Featured first, then newest
-            query = query.OrderByDescending(r => r.IsFeatured).ThenByDescending(r => r.CreatedAt);
+            // Simple count on RFQs only — no joins or subqueries
+            var total = await filtered.CountAsync();
 
-            var total = await query.CountAsync();
-            var items = await query
+            // Paginate first, then project with JOINs (Category, Buyer, Quotations)
+            var items = await filtered
+                .OrderByDescending(r => r.IsFeatured)
+                .ThenByDescending(r => r.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(r => new RFQListDto
-                {
-                    RFQId = r.RFQId,
-                    BuyerId = r.BuyerId,
-                    Title = r.Title,
-                    Quantity = r.Quantity,
-                    Unit = r.Unit,
-                    DeliveryCity = r.DeliveryCity,
-                    CategoryName = r.Category.Name,
-                    Status = r.Status,
-                    IsFeatured = r.IsFeatured,
-                    QuotationCount = r.Quotations.Count,
-                    CreatedAt = r.CreatedAt,
-                    BuyerCompany = r.Buyer.CompanyName ?? r.Buyer.FullName
-                })
+                .GroupJoin(
+                    _db.Quotations.AsNoTracking(),
+                    r => r.RFQId,
+                    q => q.RFQId,
+                    (r, quotes) => new RFQListDto
+                    {
+                        RFQId = r.RFQId,
+                        BuyerId = r.BuyerId,
+                        Title = r.Title,
+                        Quantity = r.Quantity,
+                        Unit = r.Unit,
+                        DeliveryCity = r.DeliveryCity,
+                        CategoryName = r.Category.Name,
+                        Status = r.Status,
+                        IsFeatured = r.IsFeatured,
+                        QuotationCount = quotes.Count(),
+                        CreatedAt = r.CreatedAt,
+                        BuyerCompany = r.Buyer.CompanyName ?? r.Buyer.FullName
+                    })
                 .ToListAsync();
 
             return Ok(new { total, page, pageSize, items });
@@ -149,31 +156,35 @@ namespace ZofaB2B.API.Controllers
         public async Task<IActionResult> GetMyRFQs()
         {
             var rfqs = await _db.RFQs
-                .Include(r => r.Category)
-                .Include(r => r.Quotations)
+                .AsNoTracking()
                 .Where(r => r.BuyerId == CurrentUserId)
                 .OrderByDescending(r => r.CreatedAt)
-                .Select(r => new RFQListDto
-                {
-                    RFQId = r.RFQId,
-                    BuyerId = r.BuyerId,
-                    Title = r.Title,
-                    Quantity = r.Quantity,
-                    Unit = r.Unit,
-                    DeliveryCity = r.DeliveryCity,
-                    CategoryName = r.Category.Name,
-                    Status = r.Status,
-                    IsFeatured = r.IsFeatured,
-                    QuotationCount = r.Quotations.Count,
-                    CreatedAt = r.CreatedAt,
-                    BuyerCompany = string.Empty
-                })
+                .GroupJoin(
+                    _db.Quotations.AsNoTracking(),
+                    r => r.RFQId,
+                    q => q.RFQId,
+                    (r, quotes) => new RFQListDto
+                    {
+                        RFQId = r.RFQId,
+                        BuyerId = r.BuyerId,
+                        Title = r.Title,
+                        Quantity = r.Quantity,
+                        Unit = r.Unit,
+                        DeliveryCity = r.DeliveryCity,
+                        CategoryName = r.Category.Name,
+                        Status = r.Status,
+                        IsFeatured = r.IsFeatured,
+                        QuotationCount = quotes.Count(),
+                        CreatedAt = r.CreatedAt,
+                        BuyerCompany = string.Empty
+                    })
                 .ToListAsync();
 
             return Ok(rfqs);
         }
 
         // POST /api/rfqs
+        [IgnoreAntiforgeryToken]
         [Authorize(Roles = "Buyer")]
         [HttpPost]
         public async Task<IActionResult> Create(CreateRFQDto dto)
@@ -188,7 +199,11 @@ namespace ZofaB2B.API.Controllers
                 Unit = dto.Unit,
                 TargetPrice = dto.TargetPrice,
                 DeliveryCity = dto.DeliveryCity,
-                DeadlineDate = dto.DeadlineDate
+                DeadlineDate = dto.DeadlineDate.HasValue
+                    ? (dto.DeadlineDate.Value.Kind == DateTimeKind.Unspecified
+                        ? DateTime.SpecifyKind(dto.DeadlineDate.Value, DateTimeKind.Utc)
+                        : dto.DeadlineDate.Value.ToUniversalTime())
+                    : DateTime.UtcNow
             };
 
             _db.RFQs.Add(rfq);
@@ -197,6 +212,7 @@ namespace ZofaB2B.API.Controllers
         }
 
         // PUT /api/rfqs/{id}
+        [IgnoreAntiforgeryToken]
         [Authorize(Roles = "Buyer")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, CreateRFQDto dto)
@@ -218,6 +234,7 @@ namespace ZofaB2B.API.Controllers
         }
 
         // PATCH /api/rfqs/{id}/close
+        [IgnoreAntiforgeryToken]
         [Authorize(Roles = "Buyer")]
         [HttpPatch("{id}/close")]
         public async Task<IActionResult> Close(int id)
@@ -230,13 +247,14 @@ namespace ZofaB2B.API.Controllers
         }
 
         // DELETE /api/rfqs/{id}
+        [IgnoreAntiforgeryToken]
         [Authorize(Roles = "Buyer,Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var role = User.FindFirstValue(ClaimTypes.Role);
             var rfq = role == "Admin"
-                ? await _db.RFQs.FindAsync(id)
+                ? await _db.RFQs.FirstOrDefaultAsync(r => r.RFQId == id)
                 : await _db.RFQs.FirstOrDefaultAsync(r => r.RFQId == id && r.BuyerId == CurrentUserId);
 
             if (rfq == null) return NotFound();

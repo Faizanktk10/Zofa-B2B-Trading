@@ -201,6 +201,41 @@ namespace ZofaB2B.API.Migrations
                     b.ToTable("PasswordResetTokens");
                 });
 
+            modelBuilder.Entity("ZofaB2B.API.Models.EmailVerificationCode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("EmailVerificationCodes");
+                });
+
             modelBuilder.Entity("ZofaB2B.API.Models.Payment", b =>
                 {
                     b.Property<int>("PaymentId")
@@ -573,6 +608,17 @@ namespace ZofaB2B.API.Migrations
                 });
 
             modelBuilder.Entity("ZofaB2B.API.Models.PasswordResetToken", b =>
+                {
+                    b.HasOne("ZofaB2B.API.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ZofaB2B.API.Models.EmailVerificationCode", b =>
                 {
                     b.HasOne("ZofaB2B.API.Models.User", "User")
                         .WithMany()

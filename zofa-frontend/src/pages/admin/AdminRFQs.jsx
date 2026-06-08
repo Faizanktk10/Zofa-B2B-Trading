@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { TableSkeleton } from '../../components/PageSkeleton';
 
 export default function AdminRFQs() {
   const { user } = useAuth();
@@ -13,7 +14,7 @@ export default function AdminRFQs() {
   const load = useCallback(() => {
     setLoading(true);
     const q = status ? `?status=${status}` : '';
-    api.get(`/admin/rfqs${q}`).then(r => setRfqs(r.data)).finally(() => setLoading(false));
+    api.get(`/admin/rfqs${q}`).then(r => setRfqs(r.data.items ?? r.data)).finally(() => setLoading(false));
   }, [status]);
 
   useEffect(() => {
@@ -46,10 +47,10 @@ export default function AdminRFQs() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="text-center py-5"><div className="spinner-border" style={{ color: '#e94560' }} /></div>
+      {loading && rfqs.length === 0 ? (
+        <TableSkeleton rows={8} cols={9} />
       ) : (
-        <div className="table-responsive">
+        <div className={`table-responsive ${loading ? 'opacity-50' : ''}`} style={{ transition: 'opacity 0.2s' }}>
           <table className="table table-hover align-middle">
             <thead className="table-light">
               <tr>

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ZofaB2B.API.Models;
 
 namespace ZofaB2B.API.Data
@@ -17,9 +18,30 @@ namespace ZofaB2B.API.Data
         public DbSet<Payment> Payments => Set<Payment>();
         public DbSet<SupplierProfile> SupplierProfiles => Set<SupplierProfile>();
         public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+        public DbSet<EmailVerificationCode> EmailVerificationCodes => Set<EmailVerificationCode>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Ensure all DateTime values are stored as UTC for PostgreSQL
+            var dateTimeConverter = new ValueConverter<DateTime, DateTime>(
+                v => v.Kind == DateTimeKind.Utc ? v : v.ToUniversalTime(),
+                v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+            var nullableDateTimeConverter = new ValueConverter<DateTime?, DateTime?>(
+                v => v.HasValue ? (v.Value.Kind == DateTimeKind.Utc ? v.Value : v.Value.ToUniversalTime()) : v,
+                v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties())
+                {
+                    if (property.ClrType == typeof(DateTime))
+                        property.SetValueConverter(dateTimeConverter);
+                    else if (property.ClrType == typeof(DateTime?))
+                        property.SetValueConverter(nullableDateTimeConverter);
+                }
+            }
+
             // Self-referencing category
             modelBuilder.Entity<Category>()
                 .HasOne(c => c.Parent)
@@ -60,6 +82,12 @@ namespace ZofaB2B.API.Data
                 .WithMany()
                 .HasForeignKey(l => l.SupplierId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<EmailVerificationCode>()
+                .HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Decimal precision — prevents silent truncation warnings
             modelBuilder.Entity<LeadUnlock>().Property(l => l.AmountPaid).HasPrecision(18, 2);

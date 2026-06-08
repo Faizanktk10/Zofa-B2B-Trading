@@ -34,8 +34,9 @@ export default function Navbar() {
           <ul className="navbar-nav me-auto">
             <li className="nav-item"><Link className="nav-link" to="/rfqs">RFQ Marketplace</Link></li>
             <li className="nav-item"><Link className="nav-link" to="/buyers">Buyers</Link></li>
-            <li className="nav-item"><Link className="nav-link" to="/suppliers">Categories</Link></li>
-            <li className="nav-item"><Link className="nav-link" to="/categories">Suppliers</Link></li>
+            <li className="nav-item"><Link className="nav-link" to="/suppliers">Suppliers</Link></li>
+            <li className="nav-item"><Link className="nav-link" to="/categories">Categories</Link></li>
+
             <li className="nav-item"><Link className="nav-link" to="/pricing">Pricing</Link></li>
             <li className="nav-item"><Link className="nav-link" to="/contact">Contact Us</Link></li>
           </ul>

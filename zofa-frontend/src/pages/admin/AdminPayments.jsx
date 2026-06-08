@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { TableSkeleton } from '../../components/PageSkeleton';
 
 export default function AdminPayments() {
   const { user } = useAuth();
@@ -9,11 +10,10 @@ export default function AdminPayments() {
   const [payments, setPayments] = useState([]);
   const [filter, setFilter] = useState('Pending');
   const [loading, setLoading] = useState(true);
-  const [planByPayment, setPlanByPayment] = useState({});
 
   const load = useCallback(() => {
     setLoading(true);
-    api.get(`/admin/payments?status=${filter}`).then(r => setPayments(r.data)).finally(() => setLoading(false));
+    api.get(`/admin/payments?status=${filter}`).then(r => setPayments(r.data.items ?? r.data)).finally(() => setLoading(false));
   }, [filter]);
 
   useEffect(() => {
@@ -22,12 +22,12 @@ export default function AdminPayments() {
   }, [user, navigate, load]);
 
   const confirm = async (id) => {
-    await api.patch(`/payments/${id}/approve`);
+    await api.patch(`/admin/payments/${id}/confirm`);
     setPayments(payments.filter(p => p.paymentId !== id));
   };
 
   const reject = async (id) => {
-    await api.patch(`/payments/${id}/reject`);
+    await api.patch(`/admin/payments/${id}/reject`);
     setPayments(payments.filter(p => p.paymentId !== id));
   };
 
@@ -45,10 +45,10 @@ export default function AdminPayments() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="text-center py-5"><div className="spinner-border" style={{ color: '#e94560' }} /></div>
+      {loading && payments.length === 0 ? (
+        <TableSkeleton rows={6} cols={9} />
       ) : (
-        <div className="table-responsive">
+        <div className={`table-responsive ${loading ? 'opacity-50' : ''}`} style={{ transition: 'opacity 0.2s' }}>
           <table className="table table-hover align-middle">
             <thead className="table-light">
               <tr><th>User</th><th>Plan</th><th>Amount</th><th>Method</th><th>Reference</th><th>Proof</th><th>Status</th><th>Date</th><th>Actions</th></tr>

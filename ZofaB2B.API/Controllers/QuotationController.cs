@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -10,7 +11,9 @@ using ZofaB2B.API.Services;
 namespace ZofaB2B.API.Controllers
 {
     [ApiController]
+    [IgnoreAntiforgeryToken]
     [Route("api/quotations")]
+    [EnableCors("AllowFrontend")]
     [Authorize]
     public class QuotationController : ControllerBase
     {
@@ -28,11 +31,12 @@ namespace ZofaB2B.API.Controllers
         private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         // POST /api/quotations — supplier submits quote
+        [IgnoreAntiforgeryToken]
         [Authorize(Roles = "Supplier")]
         [HttpPost]
         public async Task<IActionResult> Submit(CreateQuotationDto dto)
         {
-            var rfq = await _db.RFQs.FindAsync(dto.RFQId);
+            var rfq = await _db.RFQs.FirstOrDefaultAsync(r => r.RFQId == dto.RFQId);
             if (rfq == null || rfq.Status != "Open")
                 return BadRequest(new { message = "RFQ not found or not open." });
 
@@ -66,7 +70,7 @@ namespace ZofaB2B.API.Controllers
 
             // Email notification to buyer
             var rfqWithBuyer = await _db.RFQs.Include(r => r.Buyer).FirstAsync(r => r.RFQId == dto.RFQId);
-            var supplier = await _db.Users.FindAsync(CurrentUserId);
+            var supplier = await _db.Users.FirstOrDefaultAsync(u => u.UserId == CurrentUserId);
             _ = _email.SendNewQuoteAsync(
                 rfqWithBuyer.Buyer.Email,
                 rfqWithBuyer.Buyer.FullName,
@@ -81,7 +85,7 @@ namespace ZofaB2B.API.Controllers
         [HttpGet("rfq/{rfqId}")]
         public async Task<IActionResult> GetByRFQ(int rfqId)
         {
-            var rfq = await _db.RFQs.FindAsync(rfqId);
+            var rfq = await _db.RFQs.FirstOrDefaultAsync(r => r.RFQId == rfqId);
             if (rfq == null || rfq.BuyerId != CurrentUserId)
                 return Forbid();
 
@@ -141,6 +145,7 @@ namespace ZofaB2B.API.Controllers
         }
 
         // PATCH /api/quotations/{id}/accept
+        [IgnoreAntiforgeryToken]
         [Authorize(Roles = "Buyer")]
         [HttpPatch("{id}/accept")]
         public async Task<IActionResult> Accept(int id)
@@ -153,7 +158,7 @@ namespace ZofaB2B.API.Controllers
             await _db.SaveChangesAsync();
 
             // Email notification to supplier
-            var supplier = await _db.Users.FindAsync(quote.SupplierId);
+            var supplier = await _db.Users.FirstOrDefaultAsync(u => u.UserId == quote.SupplierId);
             if (supplier != null)
                 _ = _email.SendQuoteAcceptedAsync(supplier.Email, supplier.FullName, quote.RFQ.Title);
 
@@ -161,6 +166,7 @@ namespace ZofaB2B.API.Controllers
         }
 
         // PATCH /api/quotations/{id}/reject
+        [IgnoreAntiforgeryToken]
         [Authorize(Roles = "Buyer")]
         [HttpPatch("{id}/reject")]
         public async Task<IActionResult> Reject(int id)

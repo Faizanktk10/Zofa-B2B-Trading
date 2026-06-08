@@ -7,6 +7,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import RFQList from './pages/RFQList';
@@ -26,6 +27,8 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import About from './pages/About';
 import Contact from './pages/Contact';
+
+
 
 // Admin Pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -64,14 +67,19 @@ export default function App() {
           <Route path="/" element={<Layout><Home /></Layout>} />
           <Route path="/login" element={<Layout noFooter><Login /></Layout>} />
           <Route path="/register" element={<Layout noFooter><Register /></Layout>} />
+          <Route path="/verify-email" element={<Layout noFooter><VerifyEmail /></Layout>} />
           <Route path="/forgot-password" element={<Layout noFooter><ForgotPassword /></Layout>} />
           <Route path="/reset-password" element={<Layout noFooter><ResetPassword /></Layout>} />
+
+
+
           <Route path="/rfqs" element={<Layout><RFQList /></Layout>} />
           <Route path="/rfqs/:id" element={<Layout><RFQDetail /></Layout>} />
-          <Route path="/suppliers" element={<Layout><Categories /></Layout>} />
+          <Route path="/suppliers" element={<Layout><Suppliers /></Layout>} />
+
           <Route path="/suppliers/:id" element={<Layout><SupplierProfile /></Layout>} />
           <Route path="/buyers" element={<Layout><BuyerPage /></Layout>} />
-          <Route path="/categories" element={<Layout><Suppliers /></Layout>} />
+          <Route path="/categories" element={<Layout><Categories /></Layout>} />
           <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
           <Route path="/upgrade" element={<Layout><Upgrade /></Layout>} />
           <Route path="/about" element={<Layout><About /></Layout>} />

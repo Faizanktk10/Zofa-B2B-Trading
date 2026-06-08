@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
+import { ProfileSkeleton } from '../components/PageSkeleton';
 
 export default function SupplierProfile() {
   const { id } = useParams();
@@ -14,7 +15,7 @@ export default function SupplierProfile() {
     api.get(`/suppliers/${id}`).then(r => setSupplier(r.data)).finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div className="text-center py-5"><div className="spinner-border" style={{ color: '#e94560' }} /></div>;
+  if (loading) return <ProfileSkeleton />;
   if (!supplier) return <div className="container py-5 text-center text-muted">Supplier not found.</div>;
 
   return (

@@ -16,19 +16,22 @@ export default function Messages() {
   const pollRef = useRef(null);
 
   const loadConversations = useCallback(async () => {
-    const { data } = await api.get('/messages/conversations');
-    setConversations(data);
-    return data;
+    try {
+      const { data } = await api.get('/messages/conversations');
+      setConversations(data);
+      return data;
+    } catch { return []; }
   }, []);
 
   const loadThread = useCallback(async (userId) => {
-    const { data } = await api.get(`/messages/${userId}`);
-    setThread(data);
-    // Mark all as read
-    await api.patch(`/messages/read-all/${userId}`).catch(() => {});
-    setConversations(prev =>
-      prev.map(c => c.contactUserId === userId ? { ...c, unreadCount: 0 } : c)
-    );
+    try {
+      const { data } = await api.get(`/messages/${userId}`);
+      setThread(data);
+      await api.patch(`/messages/read-all/${userId}`).catch(() => {});
+      setConversations(prev =>
+        prev.map(c => c.contactUserId === userId ? { ...c, unreadCount: 0 } : c)
+      );
+    } catch { /* ignore */ }
   }, []);
 
   const openThread = useCallback((contact) => {

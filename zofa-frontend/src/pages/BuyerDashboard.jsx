@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
 import SEO from '../components/SEO';
+import { TableSkeleton } from '../components/PageSkeleton';
 
 export default function BuyerDashboard() {
   const { user } = useAuth();
@@ -143,8 +144,8 @@ export default function BuyerDashboard() {
           <div className="card-body p-0">
             {/* RFQs Tab */}
             {tab === 'rfqs' && (
-              loading ? (
-                <div className="text-center py-5"><div className="spinner-border" style={{ color: '#e94560' }} /></div>
+              loading && rfqs.length === 0 ? (
+                <div className="p-3"><TableSkeleton rows={5} cols={7} /></div>
               ) : rfqs.length === 0 ? (
                 <div className="text-center py-5">
                   <div style={{ fontSize: '4rem' }}>📋</div>
@@ -156,7 +157,7 @@ export default function BuyerDashboard() {
                   </Link>
                 </div>
               ) : (
-                <div className="table-responsive">
+                <div className={`table-responsive ${loading ? 'opacity-50' : ''}`} style={{ transition: 'opacity 0.2s' }}>
                   <table className="table table-hover align-middle mb-0">
                     <thead style={{ background: '#f8f9fa' }}>
                       <tr>
@@ -224,8 +225,8 @@ export default function BuyerDashboard() {
                   <Link to={`/rfqs/${selectedRFQ.rfqId}`} className="btn btn-sm btn-outline-secondary">View RFQ</Link>
                 </div>
 
-                {quotesLoading ? (
-                  <div className="text-center py-4"><div className="spinner-border" style={{ color: '#e94560' }} /></div>
+                {quotesLoading && quotes.length === 0 ? (
+                  <div className="p-3"><TableSkeleton rows={4} cols={6} /></div>
                 ) : quotes.length === 0 ? (
                   <div className="text-center py-5 text-muted">
                     <div style={{ fontSize: '3rem' }}>⏳</div>

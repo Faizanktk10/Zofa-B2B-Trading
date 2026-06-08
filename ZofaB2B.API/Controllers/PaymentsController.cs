@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -9,7 +10,9 @@ using ZofaB2B.API.Services;
 namespace ZofaB2B.API.Controllers
 {
     [ApiController]
+    [IgnoreAntiforgeryToken]
     [Route("api/payments")]
+    [EnableCors("AllowFrontend")]
     public class PaymentsController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -26,6 +29,7 @@ namespace ZofaB2B.API.Controllers
         private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         // POST /api/payments/submit-proof
+        [IgnoreAntiforgeryToken]
         [Authorize(Roles = "Supplier")]
         [HttpPost("submit-proof")]
         public async Task<IActionResult> SubmitProof([FromBody] SubmitProofDto dto)
@@ -72,6 +76,7 @@ namespace ZofaB2B.API.Controllers
             var payments = await _db.Payments
                 .Where(p => p.UserId == CurrentUserId)
                 .OrderByDescending(p => p.CreatedAt)
+                .Take(100)
                 .Select(p => new
                 {
                     p.PaymentId, p.Type, p.Amount, p.Method,
@@ -83,6 +88,7 @@ namespace ZofaB2B.API.Controllers
         }
 
         // PATCH /api/payments/{id}/approve — Admin only
+        [IgnoreAntiforgeryToken]
         [Authorize(Roles = "Admin")]
         [HttpPatch("{id}/approve")]
         public async Task<IActionResult> Approve(int id)
@@ -97,9 +103,11 @@ namespace ZofaB2B.API.Controllers
 
             payment.Status = "Confirmed";
 
-            // Deactivate old subscriptions
+            // Deactivate old subscriptions (limit to the most recent active records)
             var oldSubs = await _db.Subscriptions
                 .Where(s => s.UserId == payment.UserId && s.IsActive)
+                .OrderByDescending(s => s.StartDate)
+                .Take(100)
                 .ToListAsync();
             oldSubs.ForEach(s => s.IsActive = false);
 
@@ -158,6 +166,7 @@ namespace ZofaB2B.API.Controllers
         }
 
         // PATCH /api/payments/{id}/reject — Admin only
+        [IgnoreAntiforgeryToken]
         [Authorize(Roles = "Admin")]
         [HttpPatch("{id}/reject")]
         public async Task<IActionResult> Reject(int id)

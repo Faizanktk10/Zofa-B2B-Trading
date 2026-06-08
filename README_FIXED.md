@@ -60,6 +60,7 @@ Email:FromName=Zofa B2B Trading
 >
 > `App:EnableDevEmailFallback=true`
 
+
 ### Prerequisites
 - .NET 8 SDK
 - SQL Server (LocalDB or full)

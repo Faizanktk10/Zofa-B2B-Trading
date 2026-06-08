@@ -5,13 +5,17 @@ namespace ZofaB2B.API.DTOs
     // ─── Auth ───────────────────────────────────────────────
     public class RegisterDto
     {
-        [Required] public string FullName { get; set; } = string.Empty;
+        [Required, MinLength(3)] public string FullName { get; set; } = string.Empty;
         [Required, EmailAddress] public string Email { get; set; } = string.Empty;
         [Required, MinLength(6)] public string Password { get; set; } = string.Empty;
-        public string? Phone { get; set; }
+
+        [RegularExpression(@"^(\+92-\d{3}-\d{7}|03\d{9})$")] public string? Phone { get; set; }
+
         [Required] public string Role { get; set; } = "Buyer"; // Buyer or Supplier
-        public string? City { get; set; }
-        public string? Province { get; set; }
+
+        [Required] public string City { get; set; } = string.Empty;
+        [Required] public string Province { get; set; } = string.Empty;
+
         public string? CompanyName { get; set; }
     }
 
@@ -21,15 +25,29 @@ namespace ZofaB2B.API.DTOs
         [Required] public string Password { get; set; } = string.Empty;
     }
 
+
     public class ForgotPasswordDto
     {
         [Required, EmailAddress] public string Email { get; set; } = string.Empty;
     }
 
+
+
     public class ResetPasswordDto
     {
         [Required] public string Token { get; set; } = string.Empty;
         [Required, MinLength(6)] public string NewPassword { get; set; } = string.Empty;
+    }
+
+    public class VerifyEmailDto
+    {
+        [Required, EmailAddress] public string Email { get; set; } = string.Empty;
+        [Required, StringLength(6, MinimumLength = 6)] public string Code { get; set; } = string.Empty;
+    }
+
+    public class ResendVerificationDto
+    {
+        [Required, EmailAddress] public string Email { get; set; } = string.Empty;
     }
 
     public class UploadImageDto

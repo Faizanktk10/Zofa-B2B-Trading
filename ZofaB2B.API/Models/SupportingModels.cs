@@ -50,6 +50,18 @@ namespace ZofaB2B.API.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
+    public class EmailVerificationCode
+    {
+        public int Id { get; set; }
+        public int UserId { get; set; }
+        public User User { get; set; } = null!;
+        public string Email { get; set; } = string.Empty;
+        public string Code { get; set; } = string.Empty;
+        public DateTime ExpiresAt { get; set; }
+        public bool IsUsed { get; set; } = false;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+
     public class SupplierProfile
     {
         public int SupplierProfileId { get; set; }

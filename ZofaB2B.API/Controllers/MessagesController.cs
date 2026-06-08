@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -10,7 +11,9 @@ using ZofaB2B.API.Services;
 namespace ZofaB2B.API.Controllers
 {
     [ApiController]
+    [IgnoreAntiforgeryToken]
     [Route("api/messages")]
+    [EnableCors("AllowFrontend")]
     [Authorize]
     public class MessagesController : ControllerBase
     {
@@ -23,7 +26,7 @@ namespace ZofaB2B.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Send(SendMessageDto dto)
         {
-            var receiver = await _db.Users.FindAsync(dto.ReceiverId);
+            var receiver = await _db.Users.FirstOrDefaultAsync(u => u.UserId == dto.ReceiverId);
             if (receiver == null) return NotFound(new { message = "Recipient not found." });
 
             var msg = new Message
@@ -41,7 +44,7 @@ namespace ZofaB2B.API.Controllers
                 m.SenderId == CurrentUserId && m.ReceiverId == dto.ReceiverId && !m.IsRead && m.MessageId != msg.MessageId);
             if (!hasUnread)
             {
-                var sender = await _db.Users.FindAsync(CurrentUserId);
+                var sender = await _db.Users.FirstOrDefaultAsync(u => u.UserId == CurrentUserId);
                 _ = _email.SendNewMessageAsync(receiver.Email, receiver.FullName, sender?.CompanyName ?? sender?.FullName ?? "Someone");
             }
 
@@ -63,6 +66,7 @@ namespace ZofaB2B.API.Controllers
                 .Include(m => m.Receiver)
                 .Where(m => m.SenderId == userId || m.ReceiverId == userId)
                 .OrderByDescending(m => m.SentAt)
+                .Take(500)
                 .ToListAsync();
 
             var conversations = allMessages
@@ -152,7 +156,9 @@ namespace ZofaB2B.API.Controllers
     }
 
     [ApiController]
+    [IgnoreAntiforgeryToken]
     [Route("api/categories")]
+    [EnableCors("AllowFrontend")]
     public class CategoriesController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -162,6 +168,7 @@ namespace ZofaB2B.API.Controllers
         public async Task<IActionResult> GetAll()
         {
             var cats = await _db.Categories
+                .AsNoTracking()
                 .Where(c => c.ParentId == null)
                 .Include(c => c.SubCategories)
                 .Select(c => new
@@ -178,35 +185,39 @@ namespace ZofaB2B.API.Controllers
         }
 
         [HttpGet("{id}/rfqs")]
-        public async Task<IActionResult> GetRFQsByCategory(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any, VaryByQueryKeys = new[] { "page", "pageSize" })]
+        public async Task<IActionResult> GetRFQsByCategory(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var query = _db.RFQs
-                .Include(r => r.Buyer)
-                .Include(r => r.Quotations)
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 50) pageSize = 50;
+
+            var filtered = _db.RFQs
+                .AsNoTracking()
                 .Where(r => r.CategoryId == id && r.Status == "Open");
 
-            // Guard against invalid pagination params that can crash LINQ providers (e.g. pageSize=0)
-            if (page < 1) page = 1;
-            if (pageSize < 1) pageSize = 20;
-
-            var total = await query.CountAsync();
-            var items = await query
+            var total = await filtered.CountAsync();
+            var items = await filtered
                 .OrderByDescending(r => r.IsFeatured).ThenByDescending(r => r.CreatedAt)
                 .Skip((page - 1) * pageSize).Take(pageSize)
-                .Select(r => new RFQListDto
-                {
-                    RFQId = r.RFQId,
-                    Title = r.Title,
-                    Quantity = r.Quantity,
-                    Unit = r.Unit,
-                    DeliveryCity = r.DeliveryCity,
-                    CategoryName = r.Category.Name,
-                    Status = r.Status,
-                    IsFeatured = r.IsFeatured,
-                    QuotationCount = r.Quotations.Count,
-                    CreatedAt = r.CreatedAt,
-                    BuyerCompany = r.Buyer.CompanyName ?? r.Buyer.FullName
-                })
+                .GroupJoin(
+                    _db.Quotations.AsNoTracking(),
+                    r => r.RFQId,
+                    q => q.RFQId,
+                    (r, quotes) => new RFQListDto
+                    {
+                        RFQId = r.RFQId,
+                        Title = r.Title,
+                        Quantity = r.Quantity,
+                        Unit = r.Unit,
+                        DeliveryCity = r.DeliveryCity,
+                        CategoryName = r.Category.Name,
+                        Status = r.Status,
+                        IsFeatured = r.IsFeatured,
+                        QuotationCount = quotes.Count(),
+                        CreatedAt = r.CreatedAt,
+                        BuyerCompany = r.Buyer.CompanyName ?? r.Buyer.FullName
+                    })
                 .ToListAsync();
 
             return Ok(new { total, page, pageSize, items });

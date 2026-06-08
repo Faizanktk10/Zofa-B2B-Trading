@@ -1,16 +1,45 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
 import SEO from '../components/SEO';
 
+const FILTER_CATEGORIES = [
+  { categoryId: 1, name: 'Scrap' },
+  { categoryId: 2, name: 'Textile' },
+  { categoryId: 3, name: 'Agriculture' },
+  { categoryId: 4, name: 'Machinery' },
+  { categoryId: 5, name: 'Packaging' },
+  { categoryId: 6, name: 'Raw Materials' },
+  { categoryId: 7, name: 'Chemicals' },
+  { categoryId: 8, name: 'Electronics' },
+];
+
+function RFQCardSkeleton() {
+  return (
+    <div className="col-md-6 col-lg-4">
+      <div className="card h-100 border-0 shadow-sm">
+        <div className="card-body">
+          <div className="placeholder-glow">
+            <span className="placeholder col-8 mb-2"></span>
+            <span className="placeholder col-6 mb-2"></span>
+            <span className="placeholder col-5 mb-3"></span>
+            <span className="placeholder col-4"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function RFQList() {
   const [params, setParams] = useSearchParams();
   const [rfqs, setRfqs] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -27,24 +56,35 @@ export default function RFQList() {
     navigate('/dashboard/buyer/post-rfq');
   };
 
-  useEffect(() => {
-    api.get('/categories').then(r => setCategories(r.data));
-  }, []);
+  const isFirstLoad = useRef(true);
 
-  const fetchRFQs = useCallback(() => {
-    setLoading(true);
+  const fetchRFQs = useCallback(async (isInitial = false) => {
+    if (isInitial) setInitialLoading(true);
+    else setPageLoading(true);
+    setError('');
+
     const q = new URLSearchParams({ page, pageSize: 18 });
     if (filters.search) q.set('search', filters.search);
     if (filters.categoryId) q.set('categoryId', filters.categoryId);
     if (filters.city) q.set('city', filters.city);
-    api.get(`/rfqs?${q}`).then(r => {
-      setRfqs(r.data.items);
-      setTotal(r.data.total);
-    }).finally(() => setLoading(false));
+
+    try {
+      const { data } = await api.get(`/rfqs?${q}`);
+      setRfqs(data.items || []);
+      setTotal(data.total || 0);
+    } catch {
+      setRfqs([]);
+      setTotal(0);
+      setError('Could not load RFQs. Please check your connection and try again.');
+    } finally {
+      if (isInitial) setInitialLoading(false);
+      else setPageLoading(false);
+    }
   }, [filters, page]);
 
   useEffect(() => {
-    fetchRFQs();
+    fetchRFQs(isFirstLoad.current);
+    isFirstLoad.current = false;
   }, [fetchRFQs]);
 
   const applyFilters = (e) => {
@@ -53,11 +93,12 @@ export default function RFQList() {
     setParams(filters);
   };
 
+  const showSkeletons = initialLoading || (pageLoading && rfqs.length === 0);
+
   return (
     <div className="container py-4">
       <SEO title="RFQ Marketplace" description="Browse thousands of RFQs from Pakistani buyers looking for suppliers of scrap, textile, agriculture, machinery and more." keywords="RFQ Pakistan, buy scrap Pakistan, textile RFQ, machinery buyers Pakistan" />
       <div className="row g-4">
-        {/* Sidebar Filters */}
         <div className="col-md-3">
           <div className="card border-0 shadow-sm p-3 sticky-top" style={{ top: '80px' }}>
             <h6 className="fw-bold mb-3">🔍 Filter RFQs</h6>
@@ -72,7 +113,9 @@ export default function RFQList() {
                 <select className="form-select form-select-sm"
                   value={filters.categoryId} onChange={e => setFilters({ ...filters, categoryId: e.target.value })}>
                   <option value="">All Categories</option>
-                  {categories.map(c => <option key={c.categoryId} value={c.categoryId}>{c.name}</option>)}
+                  {FILTER_CATEGORIES.map(c => (
+                    <option key={c.categoryId} value={c.categoryId}>{c.name}</option>
+                  ))}
                 </select>
               </div>
               <div className="mb-3">
@@ -84,34 +127,39 @@ export default function RFQList() {
                 Apply Filters
               </button>
               <button type="button" className="btn btn-sm btn-light w-100 mt-2"
-                onClick={() => { setFilters({ search: '', categoryId: '', city: '' }); setPage(1); }}>
+                onClick={() => { setFilters({ search: '', categoryId: '', city: '' }); setPage(1); setParams({}); }}>
                 Clear
               </button>
             </form>
           </div>
         </div>
 
-        {/* RFQ Grid */}
         <div className="col-md-9">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h5 className="fw-bold mb-0">
-              {total} RFQs Found
-              {filters.search && <span className="text-muted fw-normal fs-6"> for &quot;{filters.search}&quot;</span>}
+              {initialLoading ? 'RFQ Marketplace' : `${total} RFQs Found`}
+              {!initialLoading && filters.search && (
+                <span className="text-muted fw-normal fs-6"> for &quot;{filters.search}&quot;</span>
+              )}
             </h5>
             <button onClick={handlePostRFQ} className="btn btn-sm fw-semibold" style={{ background: '#e94560', color: '#fff' }}>
               + Post RFQ
             </button>
           </div>
 
-          {loading ? (
-            <div className="text-center py-5"><div className="spinner-border" style={{ color: '#e94560' }} /></div>
+          {error && <div className="alert alert-warning py-2">{error}</div>}
+
+          {showSkeletons ? (
+            <div className="row g-3">
+              {Array.from({ length: 6 }).map((_, i) => <RFQCardSkeleton key={i} />)}
+            </div>
           ) : rfqs.length === 0 ? (
             <div className="text-center py-5 text-muted">
               <div style={{ fontSize: '3rem' }}>📋</div>
               <p>No RFQs found. Try different filters.</p>
             </div>
           ) : (
-            <div className="row g-3">
+            <div className={`row g-3 ${pageLoading ? 'opacity-50' : ''}`} style={{ transition: 'opacity 0.2s' }}>
               {rfqs.map(rfq => (
                 <div className="col-md-6 col-lg-4" key={rfq.rfqId}>
                   <Link to={`/rfqs/${rfq.rfqId}`} className="text-decoration-none">
@@ -141,11 +189,11 @@ export default function RFQList() {
             </div>
           )}
 
-          {total > 18 && (
+          {total > 18 && !initialLoading && (
             <div className="d-flex justify-content-center mt-4 gap-2">
-              <button className="btn btn-outline-secondary btn-sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>← Prev</button>
+              <button className="btn btn-outline-secondary btn-sm" disabled={page === 1 || pageLoading} onClick={() => setPage(p => p - 1)}>← Prev</button>
               <span className="btn btn-sm btn-light disabled">Page {page} of {Math.ceil(total / 18)}</span>
-              <button className="btn btn-outline-secondary btn-sm" disabled={page >= Math.ceil(total / 18)} onClick={() => setPage(p => p + 1)}>Next →</button>
+              <button className="btn btn-outline-secondary btn-sm" disabled={page >= Math.ceil(total / 18) || pageLoading} onClick={() => setPage(p => p + 1)}>Next →</button>
             </div>
           )}
         </div>

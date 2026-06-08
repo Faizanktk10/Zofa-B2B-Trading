@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -10,7 +11,9 @@ using ZofaB2B.API.Services;
 namespace ZofaB2B.API.Controllers
 {
     [ApiController]
+    [IgnoreAntiforgeryToken]
     [Route("api/subscriptions")]
+    [EnableCors("AllowFrontend")]
     [Authorize]
     public class SubscriptionController : ControllerBase
     {
@@ -57,6 +60,7 @@ namespace ZofaB2B.API.Controllers
         }
 
         // POST /api/subscriptions/upgrade
+        [IgnoreAntiforgeryToken]
         [Authorize(Roles = "Supplier")]
         [HttpPost("upgrade")]
         public async Task<IActionResult> Upgrade(UpgradeSubscriptionDto dto)
@@ -92,7 +96,9 @@ namespace ZofaB2B.API.Controllers
     }
 
     [ApiController]
+    [IgnoreAntiforgeryToken]
     [Route("api/leads")]
+    [EnableCors("AllowFrontend")]
     [Authorize(Roles = "Supplier")]
     public class LeadController : ControllerBase
     {
@@ -108,6 +114,7 @@ namespace ZofaB2B.API.Controllers
         private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         // POST /api/leads/unlock/{rfqId}
+        [IgnoreAntiforgeryToken]
         [HttpPost("unlock/{rfqId}")]
         public async Task<IActionResult> Unlock(int rfqId, [FromBody] string paymentReference)
         {

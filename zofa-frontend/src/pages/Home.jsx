@@ -3,28 +3,38 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import SEO from '../components/SEO';
 
-const CATEGORY_ICONS = {
-  Scrap: '♻️', Textile: '🧵', Agriculture: '🌾', Machinery: '⚙️',
-  Packaging: '📦', 'Raw Materials': '🪨', Chemicals: '🧪', Electronics: '💡'
-};
+const CATEGORIES = [
+  { name: 'Scrap', icon: '♻️', slug: 'scrap' },
+  { name: 'Textile', icon: '🧵', slug: 'textile' },
+  { name: 'Agriculture', icon: '🌾', slug: 'agriculture' },
+  { name: 'Machinery', icon: '⚙️', slug: 'machinery' },
+  { name: 'Packaging', icon: '📦', slug: 'packaging' },
+  { name: 'Raw Materials', icon: '🪨', slug: 'raw-materials' },
+  { name: 'Chemicals', icon: '🧪', slug: 'chemicals' },
+  { name: 'Electronics', icon: '💡', slug: 'electronics' },
+];
 
 export default function Home() {
   const [rfqs, setRfqs] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
-  const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState({ totalRFQs: 0, totalBuyers: 0, totalSuppliers: 0 });
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get('/rfqs?pageSize=6').then(r => { setRfqs(r.data.items || []); setTotal(r.data.total || 0); }).catch(() => {});
-    api.get('/categories').then(r => setCategories(r.data || [])).catch(() => {});
-    api.get('/suppliers').then(r => setSuppliers((r.data || []).filter(s => s.isFeatured).slice(0, 4))).catch(() => {});
+    // Parallel calls — both start at same time
+    Promise.all([
+      api.get('/rfqs?pageSize=6').catch(() => ({ data: { items: [], total: 0 } })),
+      api.get('/admin/stats').catch(() => ({ data: {} })),
+    ]).then(([rfqRes, statsRes]) => {
+      setRfqs(rfqRes.data.items || []);
+      setStats(statsRes.data || {});
+    });
   }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    navigate(`/dashboard/supplier`);
+    if (search.trim()) navigate(`/rfqs?search=${encodeURIComponent(search.trim())}`);
+    else navigate('/rfqs');
   };
 
   return (
@@ -60,14 +70,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats Bar — real counts from API */}
+      {/* Stats Bar */}
       <div style={{ background: '#e94560' }} className="py-3">
         <div className="container">
           <div className="row text-center text-white g-2">
             {[
-              [categories.length > 0 ? `${categories.length}` : '8+', 'Categories'],
-              [rfqs.length > 0 ? `${total}+` : '—', 'Active RFQs'],
-              [suppliers.length > 0 ? `${suppliers.length}+` : '—', 'Verified Suppliers'],
+              ['8+', 'Categories'],
+              [stats.totalRFQs ? `${stats.totalRFQs}+` : '0', 'Active RFQs'],
+              [stats.totalSuppliers ? `${stats.totalSuppliers}+` : '0', 'Verified Suppliers'],
               ['Pakistan', 'Nationwide Coverage'],
             ].map(([num, label]) => (
               <div className="col-6 col-md-3" key={label}>
@@ -79,19 +89,19 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Categories */}
+      {/* Categories — static, no API wait needed */}
       <section className="py-5 bg-light">
         <div className="container">
           <h2 className="fw-bold mb-4 text-center">Browse by Category</h2>
           <div className="row g-3">
-            {categories.map(cat => (
-              <div className="col-6 col-md-3" key={cat.categoryId}>
-                <Link to={`/dashboard/supplier`} className="text-decoration-none">
+            {CATEGORIES.map(cat => (
+              <div className="col-6 col-md-3" key={cat.name}>
+                <Link to={`/rfqs?search=${cat.name}`} className="text-decoration-none">
                   <div className="card h-100 text-center border-0 shadow-sm p-3"
-                    style={{ transition: 'transform 0.2s', cursor: 'pointer' }}
+                    style={{ transition: 'transform 0.15s', cursor: 'pointer' }}
                     onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
                     onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-                    <div style={{ fontSize: '2.5rem' }}>{CATEGORY_ICONS[cat.name] || '📋'}</div>
+                    <div style={{ fontSize: '2.5rem' }}>{cat.icon}</div>
                     <div className="fw-semibold mt-2" style={{ color: '#1a1a2e' }}>{cat.name}</div>
                   </div>
                 </Link>
@@ -106,6 +116,7 @@ export default function Home() {
         <div className="container">
           <div className="d-flex justify-content-between align-items-center mb-4">
             <h2 className="fw-bold mb-0">Latest RFQs</h2>
+            <Link to="/rfqs" className="btn btn-sm btn-outline-danger">View All →</Link>
           </div>
           {rfqs.length > 0 ? (
             <div className="row g-3">
@@ -113,7 +124,7 @@ export default function Home() {
                 <div className="col-md-6 col-lg-4" key={rfq.rfqId}>
                   <Link to={`/rfqs/${rfq.rfqId}`} className="text-decoration-none">
                     <div className="card h-100 border-0 shadow-sm"
-                      style={{ transition: 'transform 0.2s' }}
+                      style={{ transition: 'transform 0.15s' }}
                       onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
                       onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
                       <div className="card-body">
@@ -143,37 +154,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Suppliers */}
-      {suppliers.length > 0 && (
-        <section className="py-5 bg-light">
-          <div className="container">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-              <h2 className="fw-bold mb-0">Featured Suppliers</h2>
-              <Link to="/categories" className="btn btn-outline-danger btn-sm">View All →</Link>
-            </div>
-            <div className="row g-3">
-              {suppliers.map(s => (
-                <div className="col-md-6 col-lg-3" key={s.userId}>
-                  <Link to={`/suppliers/${s.userId}`} className="text-decoration-none">
-                    <div className="card h-100 border-0 shadow-sm text-center p-3">
-                      <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white mx-auto mb-3"
-                        style={{ width: 64, height: 64, fontSize: '1.5rem', background: '#0f3460', color: '#fff' }}>
-                        {(s.companyName?.[0] || s.fullName[0])}
-                      </div>
-                      <h6 className="fw-bold text-dark mb-1">{s.companyName || s.fullName}</h6>
-                      <p className="text-muted small mb-2">{s.city}</p>
-                      {s.isPremium && <span className="badge bg-warning text-dark">✓ Premium</span>}
-                    </div>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* How It Works */}
-      <section className="py-5">
+      <section className="py-5 bg-light">
         <div className="container text-center">
           <h2 className="fw-bold mb-5">How It Works</h2>
           <div className="row g-4">

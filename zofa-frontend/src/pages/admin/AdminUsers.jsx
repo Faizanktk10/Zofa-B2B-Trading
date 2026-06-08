@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { TableSkeleton } from '../../components/PageSkeleton';
 
 export default function AdminUsers() {
   const { user } = useAuth();
@@ -16,7 +17,7 @@ export default function AdminUsers() {
     const q = new URLSearchParams();
     if (role) q.set('role', role);
     if (search) q.set('search', search);
-    api.get(`/admin/users?${q}`).then(r => setUsers(r.data)).finally(() => setLoading(false));
+    api.get(`/admin/users?${q}`).then(r => setUsers(r.data.items ?? r.data)).finally(() => setLoading(false));
   }, [role, search]);
 
   useEffect(() => {
@@ -67,10 +68,10 @@ export default function AdminUsers() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="text-center py-5"><div className="spinner-border" style={{ color: '#e94560' }} /></div>
+      {loading && users.length === 0 ? (
+        <TableSkeleton rows={8} cols={10} />
       ) : (
-        <div className="table-responsive">
+        <div className={`table-responsive ${loading ? 'opacity-50' : ''}`} style={{ transition: 'opacity 0.2s' }}>
           <table className="table table-hover align-middle">
             <thead className="table-light">
               <tr><th>Name</th><th>Email</th><th>Role</th><th>Company</th><th>City</th><th>Subscription</th><th>Verified</th><th>Status</th><th>Joined</th><th>Actions</th></tr>

@@ -16,7 +16,9 @@ namespace ZofaB2B.API.Models
         public bool IsPremium { get; set; } = false;
         [MaxLength(30)] public string PlanType { get; set; } = "Free";
         public DateTime? SubscriptionExpiry { get; set; }
+        // Used for email verification (OTP)
         public bool IsVerified { get; set; } = false;
+
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

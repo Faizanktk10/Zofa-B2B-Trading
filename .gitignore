@@ -2,6 +2,7 @@
 ZofaB2B.API/bin/
 ZofaB2B.API/obj/
 ZofaB2B.API/appsettings.Production.json
+ZofaB2B.API/appsettings.Local.json
 
 # React
 zofa-frontend/node_modules/

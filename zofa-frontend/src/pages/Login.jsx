@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [verifyHint, setVerifyHint] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setVerifyHint('');
     try {
       const { data } = await api.post('/auth/login', form);
       login(data);
@@ -21,7 +23,11 @@ export default function Login() {
       else if (data.role === 'Buyer') navigate('/dashboard/buyer');
       else navigate('/dashboard/supplier');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed.');
+      const data = err.response?.data;
+      setError(data?.message || 'Login failed.');
+      if (data?.requiresVerification) {
+        setVerifyHint(data.email || form.email);
+      }
     } finally {
       setLoading(false);
     }
@@ -38,6 +44,13 @@ export default function Login() {
                 <p className="text-muted">Sign in to your account</p>
               </div>
               {error && <div className="alert alert-danger py-2">{error}</div>}
+              {verifyHint && (
+                <div className="alert alert-warning py-2 small">
+                  <Link to={`/verify-email?email=${encodeURIComponent(verifyHint)}`} style={{ color: '#e94560' }}>
+                    Verify your email →
+                  </Link>
+                </div>
+              )}
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Email</label>

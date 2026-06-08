@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -9,7 +10,9 @@ using ZofaB2B.API.Services;
 namespace ZofaB2B.API.Controllers
 {
     [ApiController]
+    [IgnoreAntiforgeryToken]
     [Route("api/upload")]
+    [EnableCors("AllowFrontend")]
     [Authorize]
     public class UploadController : ControllerBase
     {
@@ -25,6 +28,7 @@ namespace ZofaB2B.API.Controllers
         private int CurrentUserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         // POST /api/upload/logo — supplier logo upload
+        [IgnoreAntiforgeryToken]
         [HttpPost("logo")]
         public async Task<IActionResult> UploadLogo([FromBody] UploadImageDto dto)
         {
@@ -47,6 +51,7 @@ namespace ZofaB2B.API.Controllers
         }
 
         // POST /api/upload/payment-proof — payment proof upload
+        [IgnoreAntiforgeryToken]
         [HttpPost("payment-proof")]
         public async Task<IActionResult> UploadPaymentProof([FromBody] UploadImageDto dto)
         {

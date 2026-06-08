@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
 import SEO from '../components/SEO';
+import { ListCardSkeleton, TableSkeleton } from '../components/PageSkeleton';
 
 export default function SupplierDashboard() {
   const { user } = useAuth();
@@ -212,15 +213,15 @@ export default function SupplierDashboard() {
                   </div>
                 </form>
 
-                {rfqLoading ? (
-                  <div className="text-center py-5"><div className="spinner-border" style={{ color: '#e94560' }} /></div>
+                {rfqLoading && rfqs.length === 0 ? (
+                  <ListCardSkeleton count={4} />
                 ) : rfqs.length === 0 ? (
                   <div className="text-center py-5 text-muted">
                     <div style={{ fontSize: '3rem' }}>📋</div>
                     <p>No open RFQs found. Try different filters.</p>
                   </div>
                 ) : (
-                  <div className="d-flex flex-column gap-3">
+                  <div className={`d-flex flex-column gap-3 ${rfqLoading ? 'opacity-50' : ''}`} style={{ transition: 'opacity 0.2s' }}>
                     {rfqs.map(rfq => {
                       const f = getForm(rfq.rfqId);
                       const msg = quoteMsg[rfq.rfqId];
@@ -310,8 +311,8 @@ export default function SupplierDashboard() {
             {/* ── My Quotes Tab ── */}
             {tab === 'quotes' && (
               <div className="p-0">
-                {quotesLoading ? (
-                  <div className="text-center py-5"><div className="spinner-border" style={{ color: '#e94560' }} /></div>
+                {quotesLoading && quotes.length === 0 ? (
+                  <div className="p-3"><TableSkeleton rows={4} cols={6} /></div>
                 ) : quotes.length === 0 ? (
                   <div className="text-center py-5 text-muted">
                     <div style={{ fontSize: '3rem' }}>📤</div>

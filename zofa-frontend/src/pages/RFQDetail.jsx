@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
 import SEO from '../components/SEO';
+import { DetailPageSkeleton } from '../components/PageSkeleton';
 
 export default function RFQDetail() {
   const { id } = useParams();
@@ -34,7 +35,7 @@ export default function RFQDetail() {
     }
   };
 
-  if (loading) return <div className="text-center py-5"><div className="spinner-border" style={{ color: '#e94560' }} /></div>;
+  if (loading) return <DetailPageSkeleton />;
   if (!rfq) return <div className="container py-5 text-center text-muted">RFQ not found.</div>;
 
   return (

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -9,7 +10,9 @@ using ZofaB2B.API.Services;
 namespace ZofaB2B.API.Controllers
 {
     [ApiController]
+    [IgnoreAntiforgeryToken]
     [Route("api/users")]
+    [EnableCors("AllowFrontend")]
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -53,7 +56,7 @@ namespace ZofaB2B.API.Controllers
         [HttpPut("me")]
         public async Task<IActionResult> UpdateMe(UpdateProfileDto dto)
         {
-            var user = await _db.Users.FindAsync(CurrentUserId);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == CurrentUserId);
             if (user == null) return NotFound();
 
             user.Phone = dto.Phone ?? user.Phone;

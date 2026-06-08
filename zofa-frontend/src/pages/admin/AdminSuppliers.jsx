@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import { CardGridSkeleton } from '../../components/PageSkeleton';
 
 export default function AdminSuppliers() {
   const { user } = useAuth();
@@ -39,10 +40,10 @@ export default function AdminSuppliers() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="text-center py-5"><div className="spinner-border" style={{ color: '#e94560' }} /></div>
+      {loading && suppliers.length === 0 ? (
+        <CardGridSkeleton count={6} />
       ) : (
-        <div className="row g-3">
+        <div className={`row g-3 ${loading ? 'opacity-50' : ''}`} style={{ transition: 'opacity 0.2s' }}>
           {suppliers.map(s => (
             <div className="col-md-6 col-lg-4" key={s.userId}>
               <div className="card border-0 shadow-sm p-3 h-100">

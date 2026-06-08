@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -17,6 +18,9 @@ using Microsoft.Extensions.DependencyInjection;
 Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "");
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Load appsettings.Local.json for local development secrets (gitignored)
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
 
 // 🔥 CRITICAL: Configure Kestrel at builder stage to prevent "Addresses IsReadOnly" error
 // Must be done BEFORE .Build() is called
@@ -47,8 +51,28 @@ AppContext.SetSwitch("System.Net.DisableIPv6", true);
 // =======================
 
 // Use environment variable ConnectionStrings__DefaultConnection (Azure-friendly)
+var dbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(dbConnectionString))
+{
+    throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required. Please set it in appsettings or environment variables.");
+}
+
+var npgsqlBuilder = new Npgsql.NpgsqlConnectionStringBuilder(dbConnectionString);
+npgsqlBuilder.Pooling = false;  // Supabase pooler handles pooling
+if (string.IsNullOrWhiteSpace(npgsqlBuilder.Database))
+{
+    throw new InvalidOperationException("ConnectionStrings:DefaultConnection must include a valid Database value.");
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")!));
+    options.UseNpgsql(npgsqlBuilder.ConnectionString, npgsqlOptions =>
+    {
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorCodesToAdd: null);
+        npgsqlOptions.CommandTimeout(180); // pooler latency may exceed default 60s
+    }));
 
 
 
@@ -91,6 +115,7 @@ builder.Services.AddHttpClient();
 // =======================
 
 builder.Services.AddMemoryCache();
+builder.Services.AddResponseCaching();
 builder.Services.Configure<IpRateLimitOptions>(
     builder.Configuration.GetSection("IpRateLimiting"));
 
@@ -145,7 +170,12 @@ else
 // CONTROLLERS + SWAGGER
 // =======================
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // API is stateless and uses JWT bearer authentication, so antiforgery tokens are not required.
+    // This prevents false-positive MVC CSRF findings for JSON API endpoints.
+    options.Filters.Add(new IgnoreAntiforgeryTokenAttribute());
+});
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
@@ -198,22 +228,87 @@ using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        // Startup connectivity test (helps diagnose 500s during first request)
-        try
+        // ===== Runtime DB diagnostics (mask password) =====
+        var connString = npgsqlBuilder.ConnectionString;
+        if (string.IsNullOrWhiteSpace(connString))
         {
-            Console.WriteLine("Checking database connectivity...");
-            await db.Database.CanConnectAsync();
-            Console.WriteLine("Database connectivity OK.");
+            Console.WriteLine("❌ ConnectionStrings:DefaultConnection is NULL/empty at runtime.");
         }
-        catch (Exception connectEx)
+        else
         {
-            Console.WriteLine($"Database connectivity test failed: {connectEx.Message}");
-            Console.WriteLine(connectEx.ToString());
+            // Mask Password=... so logs are safe
+
+            var masked = System.Text.RegularExpressions.Regex.Replace(
+                connString,
+                @"(?i)(password\s*=)\s*[^;]+",
+                "$1***",
+                System.Text.RegularExpressions.RegexOptions.Compiled);
+
+            Console.WriteLine($"ℹ️ Using DB connection string: {masked}");
+
+            // Try extracting Host/Port for clarity
+            var hostMatch = System.Text.RegularExpressions.Regex.Match(masked, @"(?i)(Host=)([^;]+)");
+            var portMatch = System.Text.RegularExpressions.Regex.Match(masked, @"(?i)(Port=)([^;]+)");
+            var host = hostMatch.Success ? hostMatch.Groups[2].Value : "(unknown)";
+            var portVal = portMatch.Success ? portMatch.Groups[2].Value : "(default)";
+            Console.WriteLine($"ℹ️ DB host={host}, port={portVal}");
+        }
+
+        // ===== Retrying startup connectivity test =====
+        // Useful for transient DNS/network glitches on platform startup.
+        var maxAttempts = builder.Configuration.GetValue<int?>("DbConnect:MaxAttempts") ?? 5;
+        var delayMs = builder.Configuration.GetValue<int?>("DbConnect:DelayMs") ?? 1500;
+
+        var lastConnectException = (Exception?)null;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                Console.WriteLine($"Checking database connectivity (attempt {attempt}/{maxAttempts})...");
+
+                // Create a fresh NpgsqlConnection each attempt to avoid disposed/pooled instance issues.
+                // IMPORTANT: do not touch db.Database.GetDbConnection() here.
+                await using (var conn = new Npgsql.NpgsqlConnection(connString))
+                {
+                    await conn.OpenAsync();
+                    // explicit close for clean lifecycle
+                    await conn.CloseAsync();
+                }
+
+                Console.WriteLine("Database connectivity OK (connection opened).");
+                lastConnectException = null;
+                break;
+            }
+            catch (Exception connectEx)
+            {
+                lastConnectException = connectEx;
+                Console.WriteLine($"Database connectivity attempt {attempt} failed: {connectEx.Message}");
+                Console.WriteLine(connectEx.ToString());
+
+                if (attempt < maxAttempts)
+                {
+                    var waitFor = delayMs * attempt; // simple linear backoff
+                    Console.WriteLine($"Waiting {waitFor}ms before next attempt...");
+                    await Task.Delay(waitFor);
+                }
+            }
+        }
+
+
+        if (lastConnectException != null)
+        {
+            Console.WriteLine("❌ Unable to connect to database after retries.");
+            // In dev, we don't want to crash the whole web host (prevents diagnosing other issues).
+            // Login requests will still fail, but Swagger/health endpoints stay up.
+            // For production, you can enable fail-fast by setting DbConnect:FailFast=true.
+            var failFast = builder.Configuration.GetValue<bool?>("DbConnect:FailFast") ?? false;
+            if (failFast)
+                throw lastConnectException;
         }
 
         // NOTE:
-        // Running migrations automatically on Render can crash/poison the first DB operation (your stack shows DivideByZeroException inside Npgsql).
-        // Disable auto-migrate by default; run migrations in a controlled release step instead.
+        // Running migrations automatically on Render can crash/poison the first DB operation.
+        // We keep migrations disabled by default; controlled release should enable them.
         var runMigrations = builder.Configuration.GetValue<bool>("RunMigrations");
         if (runMigrations)
         {
@@ -252,8 +347,12 @@ if (app.Environment.IsDevelopment() || enableSwaggerInProd)
     app.UseSwaggerUI();
 }
 
-
-app.UseCors("AllowFrontend");
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+app.UseResponseCaching();
+app.UseCors("AllowFrontend"); // MUST be before UseAuthentication
 
 app.UseAuthentication();
 app.UseAuthorization();
