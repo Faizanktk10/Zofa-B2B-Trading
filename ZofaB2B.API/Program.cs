@@ -59,14 +59,40 @@ if (string.IsNullOrWhiteSpace(dbConnectionString))
 }
 
 var npgsqlBuilder = new Npgsql.NpgsqlConnectionStringBuilder(dbConnectionString);
-npgsqlBuilder.Pooling = false;  // Supabase pooler handles pooling
+
+// Supabase pooler handles pooling; also avoids issues with dead connections.
+npgsqlBuilder.Pooling = false;
+
+// Harden common Render/Supabase string issues.
+// NpgsqlConnectionStringBuilder is tolerant but can produce unexpected results if required fields are missing.
+if (string.IsNullOrWhiteSpace(npgsqlBuilder.Host))
+{
+    throw new InvalidOperationException("ConnectionStrings:DefaultConnection must include a valid Host value.");
+}
+
+if (npgsqlBuilder.Port <= 0)
+{
+    throw new InvalidOperationException("ConnectionStrings:DefaultConnection must include a valid Port value.");
+}
+
 if (string.IsNullOrWhiteSpace(npgsqlBuilder.Database))
 {
     throw new InvalidOperationException("ConnectionStrings:DefaultConnection must include a valid Database value.");
 }
 
+if (string.IsNullOrWhiteSpace(npgsqlBuilder.Username))
+{
+    throw new InvalidOperationException("ConnectionStrings:DefaultConnection must include a valid Username value.");
+}
+
+// NpgsqlConnectionStringBuilder exposes CommandTimeout; set a larger value for pooler latency.
+npgsqlBuilder.CommandTimeout = 180;
+
+var normalizedConnectionString = npgsqlBuilder.ConnectionString;
+
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(npgsqlBuilder.ConnectionString, npgsqlOptions =>
+    options.UseNpgsql(normalizedConnectionString, npgsqlOptions =>
     {
         npgsqlOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
@@ -74,6 +100,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             errorCodesToAdd: null);
         npgsqlOptions.CommandTimeout(180); // pooler latency may exceed default 60s
     }));
+
 
 
 

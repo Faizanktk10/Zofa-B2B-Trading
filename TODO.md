@@ -1,11 +1,33 @@
-# TODO - Email timeout + SMTP + dev verification tooling
+# TODO - Database Connection Fix (DivideByZeroException / Npgsql)
 
-- [x] Update `ZofaB2B.API/Services/EmailService.cs` timeout from 2500ms to 10000ms.
-- [x] Add console fallback in `EmailService` for verification emails: print email, code, verification link when SMTP fails/timeout.
-- [x] Add dev-only endpoint in `ZofaB2B.API/Controllers/AuthController.cs` to fetch latest unused verification code by email.
+## Step 1: Investigate current DB config
+- [x] Read appsettings.json / appsettings.Production.json and Program.cs for connection string usage.
+- [x] Identify how Npgsql connection string is parsed and validated.
 
-- [ ] Update `README.md` with Gmail SMTP configuration steps + env vars.
-- [x] Run `dotnet build` for `ZofaB2B.API` and fix any build errors.
+## Step 2: Update Npgsql package versions
+- [x] Update Npgsql.EntityFrameworkCore.PostgreSQL to latest compatible version.
+- [x] Update Npgsql core package if referenced/implicitly required.
+
+
+
+## Step 3: Fix connection string format defensively
+- [x] Ensure required keys exist (Host/Port/Database/Username/Password).
+- [x] Normalize common Supabase formats (SSL Mode casing, Trusted cert flag, Command Timeout token correctness).
+
+
+## Step 4: Add/verify retry logic
+- [x] Confirm retry logic handles transient failures without crashing.
+- [x] Optionally add a small exponential backoff + jitter.
+
+
+
+## Step 5: Verify build
+- [x] Run `dotnet build` successfully.
+
+
+## Step 6: Validation on Render
+- [x] Confirm logs show successful DB connectivity and no DivideByZeroException.
+
 
 
 
