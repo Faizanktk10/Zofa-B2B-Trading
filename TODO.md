@@ -3,6 +3,8 @@
 - [x] Ensure CORS middleware is applied before UseAuthentication (already expected)
 - [x] Run dotnet build to verify compilation succeeds
 - [x] Update TODO status after successful build
+- [x] Add SPA fallback redirects for React Router (public/_redirects)
+
 
 
 
