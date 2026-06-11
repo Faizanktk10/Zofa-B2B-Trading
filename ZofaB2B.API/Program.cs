@@ -161,7 +161,8 @@ builder.Services.AddCors(options =>
             "http://localhost:3000",
             "http://localhost:5173",
             "https://zofa.pk",
-            "https://www.zofa.pk"
+            "https://www.zofa.pk",
+            "https://zofa-b2b-trading-1.onrender.com"
         )
         .AllowAnyHeader()
         .AllowAnyMethod());
