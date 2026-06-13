@@ -1,10 +1,8 @@
-- [x] Inspect backend CORS policy and middleware order (Program.cs)
-- [x] Add frontend Render domain https://zofa-b2b-trading-1.onrender.com to allowed origins
-- [x] Ensure CORS middleware is applied before UseAuthentication (already expected)
-- [x] Run dotnet build to verify compilation succeeds
-- [x] Update TODO status after successful build
-- [x] Add SPA fallback redirects for React Router (public/_redirects)
+# TODO
 
-
+- [x] Inspect and update zofa-frontend/src/api.js to point to the correct Render backend URL.
+- [x] Ensure the frontend uses `VITE_API_URL` (and not hardcoded api.zofa.pk) in production.
+- [x] Add/confirm `.env` variables for `VITE_API_URL` and ensure build picks it up.
+- [x] Run `npm run build` for zofa-frontend and ensure it succeeds.
 
 

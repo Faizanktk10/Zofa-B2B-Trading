@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const baseURL = import.meta.env.VITE_API_URL
-  || (import.meta.env.DEV ? '/api' : 'https://api.zofa.pk/api');
+  || (import.meta.env.DEV ? '/api' : 'https://zofa-b2b-trading.onrender.com/api');
 
 const api = axios.create({
     baseURL,
