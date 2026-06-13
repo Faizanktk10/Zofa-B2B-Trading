@@ -31,7 +31,8 @@ namespace ZofaB2B.API.Services
         {
             if (string.IsNullOrWhiteSpace(toEmail)) return Task.CompletedTask;
 
-            const int timeoutMs = 10000;
+            // Increased timeout to 30 seconds for better reliability on cloud platforms
+            const int timeoutMs = 30000;
 
             try
             {
@@ -156,10 +157,27 @@ namespace ZofaB2B.API.Services
                     catch (OperationCanceledException)
                     {
                         Console.WriteLine($"[Email] Timeout - Could not send within {timeoutMs}ms to {SanitizeLogValue(toEmail)}");
+                        Console.WriteLine($"[Email] This usually means the SMTP server is unreachable or too slow. Check your SMTP credentials and network connectivity.");
+                    }
+                    catch (SmtpCommandException smtpEx)
+                    {
+                        Console.WriteLine($"[Email] SMTP Command Error for {SanitizeLogValue(toEmail)}: {smtpEx.Message}");
+                        Console.WriteLine($"[Email] StatusCode: {smtpEx.StatusCode}, MailKitErrorCode: {smtpEx.ErrorCode}");
+                        Console.WriteLine($"[Email] This often indicates authentication failure. For Gmail, you must use an App Password, not your regular password.");
+                    }
+                    catch (SmtpProtocolException smtpEx)
+                    {
+                        Console.WriteLine($"[Email] SMTP Protocol Error for {SanitizeLogValue(toEmail)}: {smtpEx.Message}");
+                        Console.WriteLine($"[Email] This indicates a protocol-level issue with the SMTP connection.");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"[Email] Failed to send to {SanitizeLogValue(toEmail)}: {ex.Message}");
+                        Console.WriteLine($"[Email] Failed to send to {SanitizeLogValue(toEmail)}: {ex.GetType().Name} - {ex.Message}");
+                        if (ex.InnerException != null)
+                        {
+                            Console.WriteLine($"[Email] Inner exception: {ex.InnerException.GetType().Name} - {ex.InnerException.Message}");
+                        }
+                        Console.WriteLine($"[Email] Stack trace: {ex.StackTrace}");
                     }
                 });
 
