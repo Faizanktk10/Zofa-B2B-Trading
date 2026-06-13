@@ -1,0 +1,16 @@
+services:
+  - name: zofa-frontend
+    type: web
+    env:
+      - key: VITE_API_URL
+        value: https://zofa-b2b-trading.onrender.com/api
+    buildCommand: npm run build
+    startCommand: npx serve dist -l 3000
+    routes:
+      - path: /
+        type: rewrite
+        to: /index.html
+      - path: /:splat
+        type: rewrite
+        to: /index.html
+
