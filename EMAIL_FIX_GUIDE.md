@@ -1,23 +1,64 @@
 # Email Sending Fix Guide
 
-## Problem
-Emails are not being sent from your Render deployment. The logs show:
+## ⚠️ URGENT: SMTP is Blocked on Render
+
+Your logs show that **SMTP connections are timing out** on Render:
 ```
 [Email] Using SMTP for faizanktk2006@gmail.com
-[Email] SMTP host=smtp.gmail.com, port=587, username=faizanktk2006@gmail.com
-[Email] Timeout - Could not send within 10000ms to faizanktk2006@gmail.com
+[Email] SMTP host=smtp-relay.brevo.com, port=587, username=ae0498001@smtp-brevo.com
+[Email] Timeout - Could not send within 30000ms to faizanktk2006@gmail.com
 ```
 
-## Root Cause
-The application is configured to use Gmail SMTP (`smtp.gmail.com:587`), but this is failing because:
+**This means Render is blocking outbound SMTP connections on port 587.** This is a common issue with cloud hosting platforms.
 
-1. **Gmail requires an App Password** - If you have 2-Factor Authentication (2FA) enabled on your Google account (which is recommended), you cannot use your regular Gmail password. You must generate an **App Password** from your Google Account settings.
+## ✅ RECOMMENDED SOLUTION: Use Resend API
 
-2. **Cloud platform restrictions** - Render and other cloud platforms may have network restrictions that block or throttle outbound SMTP connections to Gmail.
+**Resend is the ONLY reliable solution for Render** because it uses HTTPS (port 443) instead of SMTP, which is never blocked.
 
-3. **Gmail rate limits** - Gmail has strict rate limits for SMTP sending, especially from cloud IP addresses.
+### Quick Setup (5 minutes):
 
-## Solutions (Choose One)
+1. **Sign up for Resend** (free): https://resend.com/signup
+   - Use your GitHub account for quick signup
+
+2. **Get your API Key**:
+   - Go to https://resend.com/api-keys
+   - Click "Create API Key"
+   - Give it a name like "Zofa B2B"
+   - Copy the key (starts with `re_`)
+
+3. **Add Resend environment variables on Render**:
+   - Go to your Render dashboard → Your web service → Environment
+   - Add these variables:
+     ```
+     Resend__ApiKey=re_your_api_key_here
+     Resend__FromAddress=onboarding@resend.dev
+     Resend__FromName=Zofa B2B Trading
+     ```
+   - Click "Save Changes"
+
+4. **Redeploy** - Render will automatically redeploy
+
+5. **Test** - Try registering a new account. You should see:
+   ```
+   [Email] Using Resend for user@example.com
+   [Email] Sent successfully to user@example.com (Resend)
+   ```
+
+### Important Notes:
+- **Resend is FREE** for up to 3,000 emails/month (100 emails/day)
+- Emails from `onboarding@resend.dev` will work immediately
+- For production, you can add your own domain (zofa.pk) in Resend dashboard
+- Resend API uses HTTPS (port 443) which is never blocked
+
+---
+
+## Why SMTP Doesn't Work on Render
+
+1. **Port 587 is blocked** - Render blocks outbound SMTP connections to prevent spam
+2. **Cloud IP reputation** - Cloud provider IPs are often blacklisted by email providers
+3. **No reverse DNS** - Cloud IPs lack proper reverse DNS records required by SMTP servers
+
+## Other Options (Not Recommended for Render)
 
 ### Option 1: Fix Gmail SMTP (Quick Fix)
 If you want to continue using Gmail:

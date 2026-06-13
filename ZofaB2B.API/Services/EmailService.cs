@@ -157,7 +157,12 @@ namespace ZofaB2B.API.Services
                     catch (OperationCanceledException)
                     {
                         Console.WriteLine($"[Email] Timeout - Could not send within {timeoutMs}ms to {SanitizeLogValue(toEmail)}");
-                        Console.WriteLine($"[Email] This usually means the SMTP server is unreachable or too slow. Check your SMTP credentials and network connectivity.");
+                        Console.WriteLine($"[Email] SMTP connection timed out. This usually means:");
+                        Console.WriteLine($"[Email] 1. The SMTP server is blocking your IP (common with cloud providers)");
+                        Console.WriteLine($"[Email] 2. Port 587 is blocked by the hosting platform");
+                        Console.WriteLine($"[Email] 3. SMTP credentials are incorrect");
+                        Console.WriteLine($"[Email] RECOMMENDATION: Switch to Resend API (uses HTTPS port 443, more reliable)");
+                        Console.WriteLine($"[Email] Sign up at: https://resend.com and set Resend__ApiKey environment variable");
                     }
                     catch (SmtpCommandException smtpEx)
                     {
