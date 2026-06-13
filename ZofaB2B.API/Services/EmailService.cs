@@ -287,13 +287,9 @@ namespace ZofaB2B.API.Services
               </div>
             </div>";
 
-            // Always try the configured providers (Resend > SendGrid > SMTP).
-            // Dev fallback should only add console logging if sending fails; it must NOT change provider priority.
-            if (!_enableDevEmailFallback)
-            {
-                return SendAsyncCore(email, name, subject, html);
-            }
-
+            // Use provider chain exactly as configured (Resend > SendGrid > SMTP).
+            // Dev fallback only prints the verification code for troubleshooting AFTER the send attempt.
+            // IMPORTANT: Do not alter provider priority based on dev mode.
             return SendAsyncWithVerificationFallback(email, name, subject, html, code, verificationLink);
         }
 
