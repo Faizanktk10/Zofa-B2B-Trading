@@ -135,6 +135,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddScoped<SubscriptionService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<EmailJSService>();
 builder.Services.AddScoped<CloudinaryService>();
 builder.Services.AddHttpClient();
 
