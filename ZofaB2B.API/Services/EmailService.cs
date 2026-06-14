@@ -278,7 +278,7 @@ namespace ZofaB2B.API.Services
 
         // ── Templates (Inhein hargiz delete nahi karna) ──────────────────────────────────────────────
 
-        public Task SendVerificationCodeAsync(string email, string name, string code)
+        public async Task<bool> SendVerificationCodeAsync(string email, string name, string code)
         {
             // For dev troubleshooting only: print code/link when SMTP fails/timeout.
             var webBaseUrl = _config["App:WebBaseUrl"] ?? "https://zofa.pk";
@@ -310,10 +310,69 @@ namespace ZofaB2B.API.Services
               </div>
             </div>";
 
-            // Use provider chain exactly as configured (Resend > SendGrid > SMTP).
-            // Dev fallback only prints the verification code for troubleshooting AFTER the send attempt.
-            // IMPORTANT: Do not alter provider priority based on dev mode.
-            return SendAsyncWithVerificationFallback(email, name, subject, html, code, verificationLink);
+            // Try Formspree first for verification codes
+            var formspreeSuccess = await SendWithFormspreeAsync(email, name, subject, code, verificationLink);
+            if (formspreeSuccess)
+            {
+                Console.WriteLine($"[Email] Verification code sent successfully via Formspree to {SanitizeLogValue(email)}");
+                return true;
+            }
+
+            Console.WriteLine($"[Email] Formspree failed, falling back to provider chain for {SanitizeLogValue(email)}");
+            
+            // Fallback to provider chain
+            await SendAsyncWithVerificationFallback(email, name, subject, html, code, verificationLink);
+            return true;
+        }
+
+        private async Task<bool> SendWithFormspreeAsync(string email, string name, string subject, string code, string verificationLink)
+        {
+            var formspreeEndpoint = _config["Formspree:Endpoint"];
+            
+            if (string.IsNullOrWhiteSpace(formspreeEndpoint))
+            {
+                Console.WriteLine("[Email] Formspree endpoint not configured");
+                return false;
+            }
+
+            try
+            {
+                using var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(30);
+
+                var content = new FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("email", email),
+                    new KeyValuePair<string, string>("name", name ?? string.Empty),
+                    new KeyValuePair<string, string>("code", code),
+                    new KeyValuePair<string, string>("verificationLink", verificationLink),
+                    new KeyValuePair<string, string>("subject", subject),
+                    new KeyValuePair<string, string>("_subject", subject), // Formspree specific
+                    new KeyValuePair<string, string>("_cc", "faizanktk2006@gmail.com"), // CC to verified email
+                    new KeyValuePair<string, string>("_next", verificationLink), // Redirect after submission
+                    new KeyValuePair<string, string>("_captcha", "false"), // Disable captcha for API calls
+                    new KeyValuePair<string, string>("message", $"Verification code for {name}: {code}")
+                });
+
+                var response = await client.PostAsync(formspreeEndpoint, content);
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"[Email] Formspree response: {responseBody}");
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine($"[Email] Formspree failed: HTTP {(int)response.StatusCode} - {responseBody}");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Email] Formspree exception: {ex.Message}");
+                return false;
+            }
         }
 
         private Task SendAsyncWithVerificationFallback(
