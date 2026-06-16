@@ -326,21 +326,28 @@ namespace ZofaB2B.API.Services
             string code,
             string verificationLink)
         {
-            // Send email directly to user using the provider chain (Resend > SendGrid > SMTP)
-            // This ensures the email goes to the user's Gmail, not to Formspree
+            // Send email directly to user using EmailJS (primary method)
+            // This ensures the email goes to the user's Gmail account
             return Task.Run(async () =>
             {
                 try
                 {
-                    // Attempt to send via the normal priority chain (Resend > SendGrid > SMTP)
+                    // Use EmailJS to send verification code directly to user's Gmail
+                    var emailJSSuccess = await SendVerificationViaEmailJSAsync(toEmail, toName, code, verificationLink);
+                    if (emailJSSuccess)
+                    {
+                        Console.WriteLine($"[Email] Verification code sent successfully via EmailJS to {SanitizeLogValue(toEmail)}");
+                        return;
+                    }
+                    
+                    Console.WriteLine($"[Email] EmailJS failed, falling back to SMTP for {SanitizeLogValue(toEmail)}");
+                    
+                    // Fallback to SMTP if EmailJS fails
                     await SendAsyncCore(toEmail, toName, subject, htmlBody);
-
-                    // Wait a bit to allow fire-and-forget to potentially complete
-                    await Task.Delay(500);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // Ignore - SendAsyncCore already logs errors
+                    Console.WriteLine($"[Email] Error sending verification email: {ex.Message}");
                 }
 
                 // Always print verification details in dev mode for troubleshooting
@@ -354,6 +361,81 @@ namespace ZofaB2B.API.Services
                 Console.WriteLine("╚══════════════════════════════════════════════════════════╝");
                 Console.WriteLine("");
             });
+        }
+
+        /// <summary>
+        /// Send verification code via EmailJS API
+        /// Uses the configured EmailJS service to send emails directly to user's Gmail
+        /// </summary>
+        private async Task<bool> SendVerificationViaEmailJSAsync(string toEmail, string toName, string code, string verificationLink)
+        {
+            // Get EmailJS configuration from appsettings.json
+            var serviceId = _config["EmailJS:ServiceId"];
+            var templateId = _config["EmailJS:TemplateId"];
+            var publicKey = _config["EmailJS:PublicKey"];
+
+            if (string.IsNullOrWhiteSpace(serviceId) || string.IsNullOrWhiteSpace(templateId) || string.IsNullOrWhiteSpace(publicKey))
+            {
+                Console.WriteLine("[Email] EmailJS configuration missing (ServiceId, TemplateId, or PublicKey)");
+                return false;
+            }
+
+            Console.WriteLine($"[Email] Sending verification code via EmailJS to {SanitizeLogValue(toEmail)}");
+            Console.WriteLine($"[Email] Using Service ID: {serviceId}, Template ID: {templateId}");
+
+            try
+            {
+                using var httpClient = new HttpClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(30);
+
+                // EmailJS API payload
+                var payload = new
+                {
+                    service_id = serviceId,
+                    template_id = templateId,
+                    user_id = publicKey,
+                    template_params = new
+                    {
+                        to_email = toEmail,
+                        to_name = toName ?? "User",
+                        verification_code = code,
+                        verification_link = verificationLink,
+                        from_name = "Zofa B2B Trading",
+                        subject = "Verify Your Email - Zofa B2B",
+                        message = $"Your verification code is: {code}"
+                    }
+                };
+
+                var json = JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                Console.WriteLine($"[Email] EmailJS Request payload: {json}");
+
+                var response = await httpClient.PostAsync("https://api.emailjs.com/api/v1.0/email/send", content);
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine($"[Email] EmailJS Response: HTTP {(int)response.StatusCode} - {responseBody}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"[Email] EmailJS email sent successfully to {SanitizeLogValue(toEmail)}");
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine($"[Email] EmailJS failed: HTTP {(int)response.StatusCode} - {responseBody}");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Email] EmailJS exception: {ex.GetType().Name} - {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"[Email] Inner exception: {ex.InnerException.Message}");
+                }
+                return false;
+            }
         }
 
         private async Task<bool> SendWithEmailJSAsync(string toEmail, string toName, string code, string verificationLink)

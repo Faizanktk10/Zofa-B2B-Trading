@@ -52,9 +52,14 @@ namespace ZofaB2B.API.Services
                     user_id = _publicKey,
                     template_params = new
                     {
+                        // IMPORTANT: These keys MUST match EmailJS template placeholders
+                        // Template placeholders (from your report):
+                        // {{name}}, {{email}}, {{code}}, {{to_email}}, {{verification_link}}
+                        name = toName ?? "User",
+                        email = toEmail,
+                        code = code,
                         to_email = toEmail,
-                        to_name = toName ?? "User",
-                        verification_code = code,
+                        verification_code = code, // keep old key for compatibility
                         verification_link = verificationLink,
                         from_name = "Zofa B2B Trading",
                         subject = "Verify Your Email — Zofa B2B"
