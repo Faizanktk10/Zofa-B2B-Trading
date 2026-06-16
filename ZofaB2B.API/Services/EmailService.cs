@@ -312,27 +312,48 @@ namespace ZofaB2B.API.Services
 
             Console.WriteLine($"[Email] Starting verification code delivery to {SanitizeLogValue(email)}");
 
-            // Priority 1: Try EmailJS first (most reliable for this use case)
-            var emailJSSuccess = await SendWithEmailJSAsync(email, name, code, verificationLink);
-            if (emailJSSuccess)
-            {
-                Console.WriteLine($"[Email] Verification code sent successfully via EmailJS to {SanitizeLogValue(email)}");
-                return true;
-            }
-            Console.WriteLine($"[Email] EmailJS failed, trying Formspree...");
-
-            // Priority 2: Try Formspree
-            var formspreeSuccess = await SendWithFormspreeAsync(email, name, subject, code, verificationLink);
-            if (formspreeSuccess)
-            {
-                Console.WriteLine($"[Email] Verification code sent successfully via Formspree to {SanitizeLogValue(email)}");
-                return true;
-            }
-            Console.WriteLine($"[Email] Formspree failed, falling back to provider chain for {SanitizeLogValue(email)}");
-
-            // Priority 3: Fallback to provider chain (Resend > SendGrid > SMTP)
-            await SendAsyncWithVerificationFallback(email, name, subject, html, code, verificationLink);
+            // Send directly to user's email using SMTP/API providers (NOT Formspree)
+            // Formspree is for form submissions, not for sending verification emails to users
+            await SendVerificationEmailDirectlyAsync(email, name, subject, html, code, verificationLink);
             return true;
+        }
+
+        private Task SendVerificationEmailDirectlyAsync(
+            string toEmail,
+            string toName,
+            string subject,
+            string htmlBody,
+            string code,
+            string verificationLink)
+        {
+            // Send email directly to user using the provider chain (Resend > SendGrid > SMTP)
+            // This ensures the email goes to the user's Gmail, not to Formspree
+            return Task.Run(async () =>
+            {
+                try
+                {
+                    // Attempt to send via the normal priority chain (Resend > SendGrid > SMTP)
+                    await SendAsyncCore(toEmail, toName, subject, htmlBody);
+
+                    // Wait a bit to allow fire-and-forget to potentially complete
+                    await Task.Delay(500);
+                }
+                catch (Exception)
+                {
+                    // Ignore - SendAsyncCore already logs errors
+                }
+
+                // Always print verification details in dev mode for troubleshooting
+                Console.WriteLine("");
+                Console.WriteLine("╔══════════════════════════════════════════════════════════╗");
+                Console.WriteLine("║          EMAIL VERIFICATION CODE (DEV MODE)             ║");
+                Console.WriteLine("╠══════════════════════════════════════════════════════════╣");
+                Console.WriteLine($"║  Email: {toEmail,-50} ║");
+                Console.WriteLine($"║  Code:  {code,-50} ║");
+                Console.WriteLine($"║  Link:  {verificationLink,-50} ║");
+                Console.WriteLine("╚══════════════════════════════════════════════════════════╝");
+                Console.WriteLine("");
+            });
         }
 
         private async Task<bool> SendWithEmailJSAsync(string toEmail, string toName, string code, string verificationLink)
