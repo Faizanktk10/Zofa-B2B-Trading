@@ -7,6 +7,8 @@ export default function VerifyEmail() {
   const [params] = useSearchParams();
   const [email, setEmail] = useState(params.get('email') || '');
   const [code, setCode] = useState('');
+  const [showCode, setShowCode] = useState(false);
+  const [debugCode, setDebugCode] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -68,7 +70,9 @@ export default function VerifyEmail() {
               </div>
 
               <div className="alert alert-info py-2 small mb-3">
-                We sent a 6-digit code to your email. Enter it below to activate your account.
+                Email sending is temporarily disabled due to provider restrictions.
+                <br />
+                Use the verification code shown in server console (check backend logs), or paste it here.
               </div>
 
               {error && <div className="alert alert-danger py-2">{error}</div>}

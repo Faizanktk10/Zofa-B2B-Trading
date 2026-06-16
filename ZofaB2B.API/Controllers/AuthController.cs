@@ -45,7 +45,12 @@ namespace ZofaB2B.API.Controllers
             await _db.SaveChangesAsync();
 
             Console.WriteLine($"[Auth] Verification code for {user.Email}: {code}");
-            await _email.SendVerificationCodeAsync(user.Email, user.FullName, code);
+
+            // EMAIL CHAIN DISABLED TEMPORARILY (EmailJS 403 / SMTP timeout / Resend testing mode)
+            // For urgent verification unblock, frontend will display this code to the user.
+            // await _email.SendVerificationCodeAsync(user.Email, user.FullName, code);
+            
+            await Task.CompletedTask;
         }
 
         [IgnoreAntiforgeryToken]
