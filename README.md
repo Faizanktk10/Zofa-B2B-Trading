@@ -6,6 +6,14 @@ Pakistan's #1 B2B Marketplace — connecting buyers and suppliers for industrial
 
 ## Tech Stack
 
+Project me yeh languages/tech use hoti hain:
+
+- **Backend:** C# (.NET 8)
+- **Database:** SQL (Postgres via Npgsql)
+- **Frontend:** JavaScript (React 18 + Vite)
+- **Styling/UI:** Bootstrap 5 (CSS)
+- **API Docs:** Swagger (OpenAPI)
+
 | Layer      | Technology                        |
 |------------|-----------------------------------|
 | Backend    | ASP.NET Core 8 Web API            |
