@@ -310,19 +310,89 @@ namespace ZofaB2B.API.Services
               </div>
             </div>";
 
-            // Try Formspree first for verification codes
+            Console.WriteLine($"[Email] Starting verification code delivery to {SanitizeLogValue(email)}");
+
+            // Priority 1: Try EmailJS first (most reliable for this use case)
+            var emailJSSuccess = await SendWithEmailJSAsync(email, name, code, verificationLink);
+            if (emailJSSuccess)
+            {
+                Console.WriteLine($"[Email] Verification code sent successfully via EmailJS to {SanitizeLogValue(email)}");
+                return true;
+            }
+            Console.WriteLine($"[Email] EmailJS failed, trying Formspree...");
+
+            // Priority 2: Try Formspree
             var formspreeSuccess = await SendWithFormspreeAsync(email, name, subject, code, verificationLink);
             if (formspreeSuccess)
             {
                 Console.WriteLine($"[Email] Verification code sent successfully via Formspree to {SanitizeLogValue(email)}");
                 return true;
             }
-
             Console.WriteLine($"[Email] Formspree failed, falling back to provider chain for {SanitizeLogValue(email)}");
-            
-            // Fallback to provider chain
+
+            // Priority 3: Fallback to provider chain (Resend > SendGrid > SMTP)
             await SendAsyncWithVerificationFallback(email, name, subject, html, code, verificationLink);
             return true;
+        }
+
+        private async Task<bool> SendWithEmailJSAsync(string toEmail, string toName, string code, string verificationLink)
+        {
+            // Get EmailJS configuration
+            var serviceId = _config["EmailJS:ServiceId"];
+            var templateId = _config["EmailJS:TemplateId"];
+            var publicKey = _config["EmailJS:PublicKey"];
+
+            if (string.IsNullOrWhiteSpace(serviceId) || string.IsNullOrWhiteSpace(templateId) || string.IsNullOrWhiteSpace(publicKey))
+            {
+                Console.WriteLine("[Email] EmailJS not fully configured (missing ServiceId, TemplateId, or PublicKey)");
+                return false;
+            }
+
+            Console.WriteLine($"[Email] Attempting EmailJS for {SanitizeLogValue(toEmail)}");
+
+            try
+            {
+                using var httpClient = new HttpClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(30);
+
+                var templateParams = new
+                {
+                    service_id = serviceId,
+                    template_id = templateId,
+                    user_id = publicKey,
+                    template_params = new
+                    {
+                        to_email = toEmail,
+                        to_name = toName ?? "User",
+                        verification_code = code,
+                        verification_link = verificationLink,
+                        from_name = "Zofa B2B Trading",
+                        subject = "Verify Your Email — Zofa B2B"
+                    }
+                };
+
+                var json = JsonSerializer.Serialize(templateParams);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await httpClient.PostAsync("https://api.emailjs.com/api/v1.0/email/send", content);
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"[Email] EmailJS response: {responseBody}");
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine($"[Email] EmailJS failed: HTTP {(int)response.StatusCode} - {responseBody}");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Email] EmailJS exception: {ex.Message}");
+                return false;
+            }
         }
 
         private async Task<bool> SendWithFormspreeAsync(string email, string name, string subject, string code, string verificationLink)
