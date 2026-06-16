@@ -295,5 +295,39 @@ namespace ZofaB2B.API.Controllers
 
             return Ok(new { message = "Password reset successfully. You can now login." });
         }
+
+        // DEV/SUPPORT ONLY: fetch latest unused verification code so UI can display it.
+        // SAFETY: enabled only when App:EnableVerificationCodeDebug == true.
+        [HttpGet("debug-verification-code")]
+        public async Task<IActionResult> DebugVerificationCode([FromQuery] string email)
+        {
+            var enabledByConfig = HttpContext.RequestServices.GetService(typeof(Microsoft.Extensions.Configuration.IConfiguration))
+                                    as Microsoft.Extensions.Configuration.IConfiguration;
+            var enabled = enabledByConfig?.GetValue<bool>("App:EnableVerificationCodeDebug") ?? false;
+
+            if (!enabled)
+                return StatusCode(404, new { message = "Not found." });
+
+
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest(new { message = "Email is required." });
+
+            var normalizedEmail = email.Trim();
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+            if (user == null)
+                return NotFound(new { message = "No such user." });
+
+            var code = await _db.EmailVerificationCodes
+                .Where(c => c.UserId == user.UserId && !c.IsUsed && c.ExpiresAt > DateTime.UtcNow)
+                .OrderByDescending(c => c.CreatedAt)
+                .Select(c => c.Code)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrWhiteSpace(code))
+                return NotFound(new { message = "No active verification code." });
+
+            return Ok(new { code });
+        }
     }
 }
+

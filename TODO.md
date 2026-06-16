@@ -1,8 +1,11 @@
 # TODO
 
-- [x] Inspect and update zofa-frontend/src/api.js to point to the correct Render backend URL.
-- [x] Ensure the frontend uses `VITE_API_URL` (and not hardcoded api.zofa.pk) in production.
-- [x] Add/confirm `.env` variables for `VITE_API_URL` and ensure build picks it up.
-- [x] Run `npm run build` for zofa-frontend and ensure it succeeds.
-
+## Verification code visibility (urgent)
+- [x] Disable email sending temporarily in `AuthController` so verification works even if Gmail fails.
+- [x] Ensure verification code is still generated and saved to DB and printed to server console.
+- [x] Update frontend `VerifyEmail.jsx` to show a big bold SERVER CODE area.
+- [ ] Add a debug endpoint to fetch latest unused verification code for a given email (dev/support only).
+- [ ] Update `VerifyEmail.jsx` to call this debug endpoint and set `serverCode` so code displays to the user.
+- [ ] Copy-paste friendly UX polish (auto-select, disable resend while fetching).
+- [ ] Build check + final commit/PR.
 

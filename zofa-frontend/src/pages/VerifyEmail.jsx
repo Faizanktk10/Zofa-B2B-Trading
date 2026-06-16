@@ -24,12 +24,31 @@ export default function VerifyEmail() {
     return () => clearTimeout(t);
   }, [resendCooldown]);
 
+  useEffect(() => {
+    // Dev/support: fetch latest server code (only enabled when backend config is on)
+    const fetchServerCode = async () => {
+      if (!email.trim()) return;
+      try {
+        const { data } = await api.get('/auth/debug-verification-code', { params: { email: email.trim() } });
+        if (data?.code) {
+          setServerCode(data.code);
+          // also auto-fill input for convenience
+          setCode(data.code);
+        }
+      } catch (e) {
+        // silently ignore (endpoint might be disabled)
+      }
+    };
+    fetchServerCode();
+  }, [email]);
+
   const handleVerify = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
     if (!email.trim()) { setError('Email is required.'); return; }
     if (code.length !== 6) { setError('Enter the 6-digit code from your email.'); return; }
+
 
     setLoading(true);
     try {
