@@ -41,9 +41,27 @@ export default function Register() {
     if (form.fullName.trim().length < 3) next.fullName = 'Full Name is required (minimum 3 characters)';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) next.email = 'Valid email is required';
     if (!form.password || form.password.length < 6) next.password = 'Password is required (minimum 6 characters)';
-    const phone = form.phone.trim();
-    if (phone && !/^(\+92-\d{3}-\d{7}|03\d{9})$/.test(phone))
-      next.phone = 'Use format: +92-300-0000000 or 03001234567';
+    const phoneRaw = form.phone.trim();
+    // Accept common Pakistani formats:
+    // 1) +92-300-0000000
+    // 2) +92188455904
+    // 3) +92 300 0000000
+    // 4) 03001234567
+    const digits = phoneRaw.replace(/\D/g, '');
+
+    const normalizedE164 = (() => {
+      if (digits.startsWith('92')) return `+${digits}`; // +92XXXXXXXXX (after removing non-digits)
+      if (digits.startsWith('0')) return `+92${digits.slice(1)}`; // 0XXXXXXXXX -> +92...
+      return phoneRaw;
+    })();
+
+    const isValid =
+      /^\+92\d{10}$/.test(normalizedE164) || // +92 + 10 digits (Pakistan mobile)
+      /^03\d{9}$/.test(phoneRaw); // legacy local format
+
+    if (phoneRaw && !isValid) {
+      next.phone = 'Use format: +92-300-0000000 or +923000000000 or 03001234567';
+    }
     if (!form.city) next.city = 'Please select a city';
     if (!form.province) next.province = 'Please select a province';
     if (form.role === 'Supplier' && !form.companyName?.trim())
