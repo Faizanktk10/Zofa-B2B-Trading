@@ -49,9 +49,8 @@ export default function Navbar() {
           <span className="navbar-toggler-icon" />
         </button>
         <div
-          className="collapse navbar-collapse"
+          className={`collapse navbar-collapse ${mobileMenuOpen ? 'show' : ''}`}
           id="navMenu"
-          onTransitionEnd={() => { /* no-op */ }}
         >
           <ul className="navbar-nav me-auto">
             <li className="nav-item"><Link className="nav-link" to="/rfqs" onClick={() => setMobileMenuOpen(false)}>RFQ Marketplace</Link></li>
