@@ -1,3 +1,14 @@
+// ============================================
+// Page: VerifyEmail.jsx
+// Purpose: User email verification page.
+//          - Reads `email` from query params
+//          - Lets user submit 6-digit verification code
+//          - Calls backend to verify and logs the user in
+//          - Provides a resend-code flow with cooldown
+// Created by: Faizan (Full Stack)
+// Date: June 2026
+// ============================================
+
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api';

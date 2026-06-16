@@ -1,3 +1,13 @@
+// ============================================
+// Page: Register.jsx
+// Purpose: User registration (Buyer/Supplier).
+//          - Validates inputs (email/password/phone/city/province)
+//          - Calls backend /auth/register
+//          - Redirects user to /verify-email with email param
+// Created by: Faizan (Full Stack)
+// Date: June 2026
+// ============================================
+
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api';

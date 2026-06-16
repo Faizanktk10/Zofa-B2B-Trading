@@ -142,6 +142,19 @@ baseURL: 'https://api.zofa.pk/api'
 
 ---
 
+## Email Verification (Gmail / EmailJS)
+
+Your app supports multiple email delivery providers.
+
+- **Development/SMTP (MailKit)**: uses Gmail SMTP + App Password.
+- **EmailJS (Template-based)**: backend can send verification codes using EmailJS via HTTP POST.
+
+If verification emails aren’t arriving in production, check:
+- EmailJS template variable names (must match `verification_code` and `verification_link`)
+- Backend config values: `EmailJS:ServiceId`, `EmailJS:TemplateId`, `EmailJS:PublicKey`, and `App:WebBaseUrl`.
+
+---
+
 ## Key Features
 
 - RFQ posting and browsing system
