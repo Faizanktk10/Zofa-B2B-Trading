@@ -91,7 +91,7 @@ namespace ZofaB2B.API.Controllers
                         await SendVerificationCodeAsync(existing);
                         return Ok(new
                         {
-                            message = "Account exists but email is not verified. A new code has been sent.",
+                            message = "Account exists but email is not verified. Please use the verification code from server console.",
                             email = normalizedEmail,
                             requiresVerification = true
                         });
@@ -138,7 +138,7 @@ namespace ZofaB2B.API.Controllers
 
                 return Ok(new
                 {
-                    message = "Account created. Please check your email for the 6-digit verification code.",
+                    message = "Account created. Please check your email or server console for the 6-digit verification code.",
                     email = user.Email,
                     requiresVerification = true
                 });

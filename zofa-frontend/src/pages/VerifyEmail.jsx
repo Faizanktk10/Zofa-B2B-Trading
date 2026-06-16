@@ -9,6 +9,8 @@ export default function VerifyEmail() {
   const [code, setCode] = useState('');
   const [showCode, setShowCode] = useState(false);
   const [debugCode, setDebugCode] = useState('');
+  const [serverCode, setServerCode] = useState('');
+
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -63,6 +65,39 @@ export default function VerifyEmail() {
         <div className="row justify-content-center">
           <div className="col-md-5">
             <div className="card border-0 shadow-lg p-4">
+
+              <div className="text-center mb-3">
+                <div className="alert alert-warning py-2 small mb-3" style={{ borderRadius: 12 }}>
+                  Email sending is temporarily disabled.
+                  <br />
+                  Your verification code is printed on the server console.
+                </div>
+
+                <div className="mb-2">
+                  <div className="text-muted fw-semibold" style={{ fontSize: 14 }}>
+                    SERVER CODE (ADMIN/SUPPORT USE)
+                  </div>
+                  <div
+                    className="fw-bolder p-3 rounded"
+                    style={{
+                      background: '#0f3460',
+                      color: '#fff',
+                      fontSize: '2rem',
+                      letterSpacing: 6,
+                      userSelect: 'text',
+                      display: 'flex',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {serverCode || '------'}
+                  </div>
+                  <div className="form-text text-center" style={{ fontSize: 12 }}>
+                    Copy-paste friendly (paste in the input below).
+                  </div>
+                </div>
+
+              </div>
+
               <div className="text-center mb-4">
                 <div style={{ fontSize: '3rem' }}>📧</div>
                 <h3 className="fw-bold mt-2"><span style={{ color: '#e94560' }}>ZOFA</span> B2B</h3>
