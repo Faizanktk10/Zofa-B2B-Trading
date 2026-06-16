@@ -1,13 +1,23 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import NotificationBell from './NotificationBell';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Close mobile navbar dropdown on navigation (fix: menu staying open on mobile)
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
+    setMobileMenuOpen(false);
     navigate('/');
   };
 
@@ -27,18 +37,30 @@ export default function Navbar() {
           <span style={{ color: '#e94560' }}>ZOFA</span>{' '}
           <span className="text-white">B2B TRADING</span>
         </Link>
-        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+        <button
+          className="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navMenu"
+          aria-expanded={mobileMenuOpen ? 'true' : 'false'}
+          aria-controls="navMenu"
+          onClick={() => setMobileMenuOpen(v => !v)}
+        >
           <span className="navbar-toggler-icon" />
         </button>
-        <div className="collapse navbar-collapse" id="navMenu">
+        <div
+          className="collapse navbar-collapse"
+          id="navMenu"
+          onTransitionEnd={() => { /* no-op */ }}
+        >
           <ul className="navbar-nav me-auto">
-            <li className="nav-item"><Link className="nav-link" to="/rfqs">RFQ Marketplace</Link></li>
-            <li className="nav-item"><Link className="nav-link" to="/buyers">Buyers</Link></li>
-            <li className="nav-item"><Link className="nav-link" to="/suppliers">Suppliers</Link></li>
-            <li className="nav-item"><Link className="nav-link" to="/categories">Categories</Link></li>
+            <li className="nav-item"><Link className="nav-link" to="/rfqs" onClick={() => setMobileMenuOpen(false)}>RFQ Marketplace</Link></li>
+            <li className="nav-item"><Link className="nav-link" to="/buyers" onClick={() => setMobileMenuOpen(false)}>Buyers</Link></li>
+            <li className="nav-item"><Link className="nav-link" to="/suppliers" onClick={() => setMobileMenuOpen(false)}>Suppliers</Link></li>
+            <li className="nav-item"><Link className="nav-link" to="/categories" onClick={() => setMobileMenuOpen(false)}>Categories</Link></li>
 
-            <li className="nav-item"><Link className="nav-link" to="/pricing">Pricing</Link></li>
-            <li className="nav-item"><Link className="nav-link" to="/contact">Contact Us</Link></li>
+            <li className="nav-item"><Link className="nav-link" to="/pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</Link></li>
+            <li className="nav-item"><Link className="nav-link" to="/contact" onClick={() => setMobileMenuOpen(false)}>Contact Us</Link></li>
           </ul>
           <div className="d-flex gap-2 align-items-center">
             {user ? (
