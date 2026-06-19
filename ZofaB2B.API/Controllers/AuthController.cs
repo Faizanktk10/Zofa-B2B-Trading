@@ -226,9 +226,36 @@ namespace ZofaB2B.API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email.Trim());
+            var input = dto.Email?.Trim() ?? "";
+
+            // Agar user mobile number type karta hai (e.g. +92188455904 / 0300...),
+            // login ko phone/email dono se match karna hai.
+            static string NormalizePhone(string raw)
+            {
+                if (string.IsNullOrWhiteSpace(raw)) return "";
+                var digits = System.Text.RegularExpressions.Regex.Replace(raw, @"\D", "");
+                if (digits.StartsWith("92")) return $"+{digits}";
+                if (digits.StartsWith("0")) return $"+92{digits[1..]}";
+                // Agar user ne +92 ke baghair 10 digits diye hain
+                if (digits.Length == 10) return $"+92{digits}";
+                return raw.Trim();
+            }
+
+            var normalizedEmailOrPhone = input;
+            var normalizedPhone = NormalizePhone(input);
+
+            // Prefer email match, fallback phone match
+            var user = await _db.Users
+                .FirstOrDefaultAsync(u => u.Email == normalizedEmailOrPhone)
+                .ContinueWith(async t =>
+                {
+                    if (t.Result != null) return t.Result;
+                    return await _db.Users.FirstOrDefaultAsync(u => u.Phone == normalizedPhone);
+                }).Unwrap();
+
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-                return Unauthorized(new { message = "Invalid email or password." });
+                return Unauthorized(new { message = "Invalid email/phone or password." });
+
 
             if (!user.IsVerified)
                 return StatusCode(403, new { message = "Please verify your email first.", requiresVerification = true, email = user.Email });

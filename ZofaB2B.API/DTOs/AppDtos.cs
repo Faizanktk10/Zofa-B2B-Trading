@@ -21,9 +21,12 @@ namespace ZofaB2B.API.DTOs
 
     public class LoginDto
     {
-        [Required, EmailAddress] public string Email { get; set; } = string.Empty;
+        // Frontend phone inputs bhej sakti hain (e.g. +92188455904 / 0300...)
+        // Is liye EmailAddress validation remove karna zaroori hai.
+        [Required] public string Email { get; set; } = string.Empty;
         [Required] public string Password { get; set; } = string.Empty;
     }
+
 
 
     public class ForgotPasswordDto

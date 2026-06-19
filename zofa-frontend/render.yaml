@@ -13,4 +13,27 @@ services:
       - path: /:splat
         type: rewrite
         to: /index.html
+      # If the platform still does not rewrite SPA routes, serve index.html explicitly.
+      - path: /rfqs
+        type: rewrite
+        to: /index.html
+      - path: /buyers
+        type: rewrite
+        to: /index.html
+      - path: /suppliers
+        type: rewrite
+        to: /index.html
+      - path: /dashboard/buyer
+        type: rewrite
+        to: /index.html
+      - path: /dashboard/supplier
+        type: rewrite
+        to: /index.html
+      - path: /admin
+        type: rewrite
+        to: /index.html
+      - path: /admin/:splat
+        type: rewrite
+        to: /index.html
+
 
