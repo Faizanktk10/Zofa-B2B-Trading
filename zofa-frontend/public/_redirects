@@ -1,5 +1,4 @@
-# SPA fallback for client-side routes
-# Render/Netlify style wildcard: any path -> index.html
 /*    /index.html   200
+
 
 
