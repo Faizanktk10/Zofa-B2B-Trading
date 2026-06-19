@@ -379,8 +379,13 @@ if (app.Environment.IsDevelopment() || enableSwaggerInProd)
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseHttpsRedirection();
+    // Usually Render/Caddy/IIS handles HTTPS termination. If the HTTPS port isn't known,
+    // this middleware creates noisy warnings.
+    var enableHttpsRedirect = builder.Configuration.GetValue<bool?>("EnableHttpsRedirection") ?? false;
+    if (enableHttpsRedirect)
+        app.UseHttpsRedirection();
 }
+
 app.UseResponseCaching();
 app.UseCors("AllowFrontend"); // MUST be before UseAuthentication
 

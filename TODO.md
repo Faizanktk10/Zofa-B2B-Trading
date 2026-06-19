@@ -1,11 +1,11 @@
-# TODO
+# TODO (ZofaB2B Trading)
 
-## Verification code visibility (urgent)
-- [x] Disable email sending temporarily in `AuthController` so verification works even if Gmail fails.
-- [x] Ensure verification code is still generated and saved to DB and printed to server console.
-- [x] Update frontend `VerifyEmail.jsx` to show a big bold SERVER CODE area.
-- [ ] Add a debug endpoint to fetch latest unused verification code for a given email (dev/support only).
-- [ ] Update `VerifyEmail.jsx` to call this debug endpoint and set `serverCode` so code displays to the user.
-- [ ] Copy-paste friendly UX polish (auto-select, disable resend while fetching).
-- [ ] Build check + final commit/PR.
+## Warning fixes (ASP.NET)
+- [x] Program.cs me production HTTPS redirect ke warnings ko avoid karne ke liye `EnableHttpsRedirection` flag introduce kiya.
+- [ ] Deployment (Render/Container) me `/data` persistent volume ensure karo taa ke DataProtection keys persist ho.
+- [ ] Agar available ho, production me `DATAPROTECTION_CERT_THUMBPRINT` set karke DataProtection keys encryption enable karo.
+- [ ] Hosting config me `ASPNETCORE_URLS`/port override (8080 vs PORT) remove/align karo taa ke Kestrel override warning kam ho.
+
+## Login improvement
+- [ ] If user mobile number input karta hai, backend me login ko phone-normalize + phone/email accept karna.
 

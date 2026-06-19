@@ -1,189 +1,110 @@
-# ZOFA B2B TRADING
+# 🏢 Zofa B2B Trading Platform
 
-Pakistan's #1 B2B Marketplace — connecting buyers and suppliers for industrial goods.
+Pakistan's B2B Marketplace — connecting buyers and suppliers for industrial goods.
 
----
-
-## Tech Stack
-
-Project me yeh languages/tech use hoti hain:
-
-- **Backend:** C# (.NET 8)
-- **Database:** SQL (Postgres via Npgsql)
-- **Frontend:** JavaScript (React 18 + Vite)
-- **Styling/UI:** Bootstrap 5 (CSS)
-- **API Docs:** Swagger (OpenAPI)
-
-| Layer      | Technology                        |
-|------------|-----------------------------------|
-| Backend    | ASP.NET Core 8 Web API            |
-| Database   | SQL Server + EF Core 8            |
-| Auth       | JWT Bearer Tokens                 |
-| Frontend   | React 18 + Vite + Bootstrap 5     |
-| Payments   | JazzCash / EasyPaisa (manual)     |
+## 🌐 Live Demo
+- **Frontend:** [https://zofa-b2b-trading-1.onrender.com](https://zofa-b2b-trading-1.onrender.com)
+- **Backend API:** [https://zofa-b2b-trading.onrender.com](https://zofa-b2b-trading.onrender.com)
+- **API Docs:** [https://zofa-b2b-trading.onrender.com/swagger](https://zofa-b2b-trading.onrender.com/swagger)
 
 ---
 
-## Project Structure
+## ✨ Key Features
 
-```
-Zofa B2B Trading/
-├── ZofaB2B.API/          # .NET 8 Web API
-│   ├── Controllers/      # API endpoints
-│   ├── Models/           # EF Core entities
-│   ├── DTOs/             # Request/Response DTOs
-│   ├── Data/             # DbContext + migrations
-│   ├── Services/         # Business logic
-│   └── Helpers/          # JWT helper
-└── zofa-frontend/        # React + Vite app
-    └── src/
-        ├── pages/        # All page components
-        ├── components/   # Navbar, Footer, SEO, NotificationBell
-        ├── context/      # AuthContext
-        └── api.js        # Axios client
-```
+- 🔐 **JWT Authentication** with email verification
+- 📋 **RFQ System** — Buyers post requests, suppliers send quotations
+- 💬 **Real-time Messaging** between buyers and suppliers
+- 📊 **Admin Dashboard** with analytics and user management
+- 💰 **Monetization** — Premium subscriptions, lead unlocks, featured listings
+- 📱 **Fully Responsive** mobile-first design
+- 🔔 **Notification System** with real-time bell icon
 
 ---
 
-## Local Development Setup
+## 🛠 Tech Stack
 
-### Gmail SMTP Setup (Development)
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 18 + Vite + Bootstrap 5 |
+| **Backend** | ASP.NET Core 8 Web API |
+| **Database** | PostgreSQL (Supabase) |
+| **Auth** | JWT Bearer Tokens |
+| **Hosting** | Render (Cloud) |
+| **Email** | Resend / SMTP / EmailJS |
 
-This API uses **MailKit** to send emails via Gmail SMTP.
+---
 
-1. Enable **2-Step Verification** on your Google account.
-2. Create a **Gmail App Password** (this is the password used for SMTP).
-3. Set these environment variables (or add them to your appsettings):
+## 📸 Screenshots
 
-```env
-Email:Host=smtp.gmail.com
-Email:Port=587
-Email:Username=your-email@gmail.com
-Email:Password=your-16-char-app-password
-Email:FromAddress=your-email@gmail.com
-Email:FromName=Zofa B2B Trading
-```
+| Page | Preview |
+|------|---------|
+| **Home** | ![Home](screenshots/home.png) |
+| **Admin** | ![Admin](screenshots/admin.png) |
+| **API Docs** | ![Swagger](screenshots/swagger.png) |
 
-> Production: use real SMTP credentials. For local development, you can also enable the dev email console fallback with:
->
-> `App:EnableDevEmailFallback=true`
+---
+
+## 🚀 My Role
+
+**Full Stack Developer** — Designed and developed the entire application from scratch:
+- Built RESTful API with .NET Core and Entity Framework
+- Implemented JWT authentication and role-based access control
+- Created responsive React frontend with Bootstrap 5
+- Deployed on Render with CI/CD pipeline
+- Integrated multiple email providers for verification
+
+---
+
+## 🏗 Project Structure
+
+ZofaB2B.API/
+├── Controllers/
+├── Models/
+├── DTOs/
+├── Data/
+├── Services/
+└── Helpers/
+
+zofa-frontend/
+└── src/
+├── pages/
+├── components/
+├── context/
+└── api.js
+
+## 💻 Local Setup
 
 ### Prerequisites
 - .NET 8 SDK
-- SQL Server (LocalDB or full)
+- PostgreSQL (or Supabase)
 - Node.js 18+
 
 ### Backend
-
-1. Update connection string in `ZofaB2B.API/appsettings.json`:
-```json
-"DefaultConnection": "Server=localhost;Database=ZofaB2BDb;Trusted_Connection=True;TrustServerCertificate=True;"
-```
-
-2. Run the API:
 ```bash
 cd ZofaB2B.API
 dotnet run
-```
-
-- API runs at: `http://localhost:5000`
-- Swagger UI: `http://localhost:5000/swagger`
-- Database is auto-migrated on first run
-- Seeded admin: `admin@zofa.pk` / `Admin@123`
-
-### Frontend
-
-```bash
+API: http://localhost:5000
+Swagger: http://localhost:5000/swagger
+Frontend
+bash
 cd zofa-frontend
 npm install
 npm run dev
-```
+App: http://localhost:3000
+📊 Monetization
+Table
+Revenue Stream	Price (PKR)
+Premium Monthly	2,500/month
+Premium Yearly	20,000/year
+Lead Unlock	200/lead
+Featured RFQ	500/7 days
+Featured Supplier	1,500/month
+🔑 Default Credentials
+Table
+Role	Email	Password
+Admin	admin@zofa.pk	Admin@123
 
-- Runs at: `http://localhost:3000`
+## 📞 Contact
 
----
-
-## Production Deployment
-
-### Backend (IIS / Windows Server)
-
-1. Publish the API:
-```bash
-cd ZofaB2B.API
-dotnet publish -c Release -o ./publish
-```
-
-2. Copy `publish/` to your IIS site folder
-3. Update `appsettings.Production.json` with real DB credentials and JWT secret
-4. Set environment variable: `ASPNETCORE_ENVIRONMENT=Production`
-5. Create IIS Application Pool (.NET CLR: No Managed Code)
-
-### Frontend (IIS)
-
-1. Build the frontend:
-```bash
-cd zofa-frontend
-npm run build
-```
-
-2. Copy `dist/` contents to IIS wwwroot
-3. The included `web.config` handles SPA routing automatically
-
-### Update API URL for Production
-
-In `zofa-frontend/src/api.js`, change:
-```js
-baseURL: 'http://localhost:5000/api'
-```
-to:
-```js
-baseURL: 'https://api.zofa.pk/api'
-```
-
----
-
-## Default Credentials
-
-| Role     | Email              | Password   |
-|----------|--------------------|------------|
-| Admin    | admin@zofa.pk      | Admin@123  |
-
----
-
-## Email Verification (Gmail / EmailJS)
-
-Your app supports multiple email delivery providers.
-
-- **Development/SMTP (MailKit)**: uses Gmail SMTP + App Password.
-- **EmailJS (Template-based)**: backend can send verification codes using EmailJS via HTTP POST.
-
-If verification emails aren’t arriving in production, check:
-- EmailJS template variable names (must match `verification_code` and `verification_link`)
-- Backend config values: `EmailJS:ServiceId`, `EmailJS:TemplateId`, `EmailJS:PublicKey`, and `App:WebBaseUrl`.
-
----
-
-## Key Features
-
-- RFQ posting and browsing system
-- Quotation submission with daily limits (free: 5/day)
-- Premium subscription (PKR 2,500/month or PKR 20,000/year)
-- Lead unlock system (PKR 200/lead)
-- In-platform messaging with notification bell
-- Admin panel: users, RFQs, payments, suppliers
-- SEO meta tags on all pages
-- Mobile responsive (Bootstrap 5)
-- JWT authentication with role-based access
-
----
-
-## Monetization
-
-| Revenue Stream        | Price (PKR)     |
-|-----------------------|-----------------|
-| Premium Monthly       | 2,500 / month   |
-| Premium Yearly        | 20,000 / year   |
-| Lead Unlock           | 200 / lead      |
-| Featured RFQ          | 500 / 7 days    |
-| Featured Supplier     | 1,500 / month   |
-
+- Email: faizanktk2006@gmail.com  
+- LinkedIn: https://www.linkedin.com/in/faizan-khan-9b8739324 
