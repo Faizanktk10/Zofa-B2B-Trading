@@ -25,7 +25,7 @@ export default function Register() {
   });
   const [fieldErrors, setFieldErrors] = useState({
     fullName: '', email: '', password: '', phone: '',
-    city: '', province: '', companyName: ''
+   province: '', companyName: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -157,14 +157,7 @@ export default function Register() {
                     {fieldErrors.phone && <div className="text-danger small mt-1">{fieldErrors.phone}</div>}
                   </div>
 
-                  <div className="col-md-6">
-                    <label className="form-label fw-semibold">City</label>
-                    <select className={`form-select ${fieldErrors.city ? 'is-invalid' : ''}`} value={form.city} onChange={set('city')}>
-                      <option value="">Select City</option>
-                      {CITIES.map(c => <option key={c}>{c}</option>)}
-                    </select>
-                    {fieldErrors.city && <div className="text-danger small mt-1">{fieldErrors.city}</div>}
-                  </div>
+                 
 
 
                   <div className="col-md-6">
