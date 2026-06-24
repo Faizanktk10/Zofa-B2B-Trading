@@ -7,12 +7,34 @@ services:
     buildCommand: npm run build
     startCommand: npx serve -s dist -l 3000
     routes:
+      # SPA fallback
       - path: /
         type: rewrite
         to: /index.html
       - path: /:splat
         type: rewrite
         to: /index.html
+
+      # Common singular/plural + typo aliases
+      - path: /supplier
+        type: redirect
+        to: /suppliers
+      - path: /buyer
+        type: redirect
+        to: /buyers
+      - path: /category
+        type: redirect
+        to: /categories
+      - path: /rfq
+        type: redirect
+        to: /rfqs
+      - path: /price
+        type: redirect
+        to: /pricing
+      - path: /contactus
+        type: redirect
+        to: /contact
+
 
 
 
