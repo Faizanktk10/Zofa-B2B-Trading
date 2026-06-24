@@ -7,7 +7,7 @@ services:
     buildCommand: npm run build
     startCommand: npx serve -s dist -l 3000
     routes:
-      # SPA fallback
+      # SPA fallback: Render ke routing layer ko index.html pe bheje.
       - path: /
         type: rewrite
         to: /index.html
@@ -15,25 +15,26 @@ services:
         type: rewrite
         to: /index.html
 
-      # Common singular/plural + typo aliases
+      # Common singular/plural + typo aliases (only main segment)
       - path: /supplier
-        type: redirect
+        type: rewrite
         to: /suppliers
       - path: /buyer
-        type: redirect
+        type: rewrite
         to: /buyers
       - path: /category
-        type: redirect
+        type: rewrite
         to: /categories
       - path: /rfq
-        type: redirect
+        type: rewrite
         to: /rfqs
       - path: /price
-        type: redirect
+        type: rewrite
         to: /pricing
       - path: /contactus
-        type: redirect
+        type: rewrite
         to: /contact
+
 
 
 
