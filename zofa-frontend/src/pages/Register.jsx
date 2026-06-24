@@ -72,8 +72,10 @@ export default function Register() {
     if (phoneRaw && !isValid) {
       next.phone = 'Use format: +92-300-0000000 or +923000000000 or 03001234567';
     }
-    if (!form.city) next.city = 'Please select a city';
+    // City removed (no validation)
+
     if (!form.province) next.province = 'Please select a province';
+
     if (form.role === 'Supplier' && !form.companyName?.trim())
       next.companyName = 'Company Name is required for Suppliers';
     setFieldErrors(next);
@@ -156,13 +158,14 @@ export default function Register() {
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold">City *</label>
+                    <label className="form-label fw-semibold">City</label>
                     <select className={`form-select ${fieldErrors.city ? 'is-invalid' : ''}`} value={form.city} onChange={set('city')}>
                       <option value="">Select City</option>
                       {CITIES.map(c => <option key={c}>{c}</option>)}
                     </select>
                     {fieldErrors.city && <div className="text-danger small mt-1">{fieldErrors.city}</div>}
                   </div>
+
 
                   <div className="col-md-6">
                     <label className="form-label fw-semibold">Province *</label>
