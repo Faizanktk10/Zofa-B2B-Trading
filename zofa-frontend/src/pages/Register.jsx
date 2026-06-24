@@ -158,6 +158,16 @@ export default function Register() {
                   </div>
 
                   <div className="col-md-6">
+                    <label className="form-label fw-semibold">Province *</label>
+                    <select className={`form-select ${fieldErrors.province ? 'is-invalid' : ''}`} value={form.province} onChange={set('province')}>
+                      <option value="">Select Province</option>
+                      {PROVINCES.map(p => <option key={p}>{p}</option>)}
+                    </select>
+                    {fieldErrors.province && <div className="text-danger small mt-1">{fieldErrors.province}</div>}
+                  </div>
+
+
+                  <div className="col-md-6">
                     <label className="form-label fw-semibold">City</label>
                     <select className={`form-select ${fieldErrors.city ? 'is-invalid' : ''}`} value={form.city} onChange={set('city')}>
                       <option value="">Select City</option>
@@ -166,15 +176,6 @@ export default function Register() {
                     {fieldErrors.city && <div className="text-danger small mt-1">{fieldErrors.city}</div>}
                   </div>
 
-
-                  <div className="col-md-6">
-                    <label className="form-label fw-semibold">Province *</label>
-                    <select className={`form-select ${fieldErrors.province ? 'is-invalid' : ''}`} value={form.province} onChange={set('province')}>
-                      <option value="">Select Province</option>
-                      {PROVINCES.map(p => <option key={p}>{p}</option>)}
-                    </select>
-                    {fieldErrors.province && <div className="text-danger small mt-1">{fieldErrors.province}</div>}
-                  </div>
 
                   <div className="col-12">
                     <label className="form-label fw-semibold">Password *</label>
